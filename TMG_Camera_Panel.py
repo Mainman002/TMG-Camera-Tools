@@ -20,6 +20,7 @@ active_dict = {
     "type" : "PERSP", ##[ PERSP, ORTHO, PANO ]
     "fStop" : 2.0,
     "sensor_w" : 36,
+    "ortho_scale" : 6,
     "focal_l" : 24,
     "use_dof" : True,
 }
@@ -45,6 +46,7 @@ def select_camera():
             active_dict['type'] = camera.data.type
             active_dict['fStop'] = camera.data.dof.aperture_fstop
             active_dict['sensor_w'] = camera.data.lens
+            active_dict['ortho_scale'] = camera.data.ortho_scale
             active_dict['focal_l'] = camera.data.sensor_width
             active_dict['use_dof'] = camera.data.dof.use_dof
             
@@ -103,26 +105,31 @@ def _change_camera_presets(self, context):
     
     if tmg_cam_vars.cam_sensor_format == '0':
         active_dict["fStop"] = 2.0
+        active_dict["ortho_scale"] = 10
         active_dict["focal_l"] = 24
         active_dict["sensor_w"] = 36
         
     if tmg_cam_vars.cam_sensor_format == '1':
         active_dict["fStop"] = 2.0
+        active_dict["ortho_scale"] = 5
         active_dict["focal_l"] = 50
         active_dict["sensor_w"] = 36
         
     if tmg_cam_vars.cam_sensor_format == '2':
         active_dict["fStop"] = 2.8
+        active_dict["ortho_scale"] = 2.8
         active_dict["focal_l"] = 80
         active_dict["sensor_w"] = 36
         
     if tmg_cam_vars.cam_sensor_format == '3':
         active_dict["fStop"] = 2.8
+        active_dict["ortho_scale"] = 1
         active_dict["focal_l"] = 210
         active_dict["sensor_w"] = 36
     
 #    tmg_cam_vars.cam_type = active_dict["type"]
     tmg_cam_vars.cam_fstop = active_dict["fStop"]
+    tmg_cam_vars.cam_ortho_scale = active_dict["ortho_scale"]
     tmg_cam_vars.cam_flength = active_dict["focal_l"]
     tmg_cam_vars.cam_ssize = active_dict["sensor_w"]
 #    tmg_cam_vars.cam_use_dof = active_dict["use_dof"]
@@ -147,6 +154,7 @@ def _change_scene_camera(self, context):
         active_dict['type'] = camera.data.type
         active_dict['fStop'] = camera.data.dof.aperture_fstop
         active_dict['sensor_w'] = camera.data.lens
+        active_dict['ortho_scale'] = camera.data.ortho_scale
         active_dict['focal_l'] = camera.data.sensor_width
         active_dict['use_dof'] = camera.data.dof.use_dof
         
@@ -156,6 +164,7 @@ def _change_scene_camera(self, context):
         tmg_cam_vars.cam_type    = active_dict['type']
         tmg_cam_vars.cam_fstop   = active_dict['fStop']
         tmg_cam_vars.cam_flength = active_dict['sensor_w']
+        tmg_cam_vars.cam_ortho_scale   = active_dict['ortho_scale']
         tmg_cam_vars.cam_ssize   = active_dict['focal_l']
         tmg_cam_vars.cam_use_dof = active_dict['use_dof']
     
@@ -175,6 +184,7 @@ def _set_cam_values(self, context):
 #        print(tmg_cam_vars.cam_type)
         camera.data.type = tmg_cam_vars.cam_type
         camera.data.dof.aperture_fstop = tmg_cam_vars.cam_fstop
+        camera.data.ortho_scale = tmg_cam_vars.cam_ortho_scale
         camera.data.lens = tmg_cam_vars.cam_flength
         camera.data.sensor_width = tmg_cam_vars.cam_ssize
         camera.data.dof.use_dof = tmg_cam_vars.cam_use_dof
@@ -214,6 +224,7 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     
     cam_use_dof : bpy.props.BoolProperty(default=True, description='Use depth of field', update=_set_cam_values)
     cam_fstop : bpy.props.FloatProperty(name='F-Stop', default=2.0, soft_min=1.0, soft_max=50.0, step=1, precision=1, description='Camera aperture ratio', update=_set_cam_values)
+    cam_ortho_scale : bpy.props.FloatProperty(name='Ortho Scale', default=6, soft_min=1, soft_max=300, step=1, precision=1, description='Camera orthographic scale', update=_set_cam_values)
     cam_flength : bpy.props.FloatProperty(name='Focal Length', default=24, soft_min=1, soft_max=300, step=1, precision=1, description='Camera focal length', update=_set_cam_values)
     cam_ssize : bpy.props.FloatProperty(name='Sensor Size', default=36, soft_min=1, soft_max=300, step=1, precision=1, description='Camera sensor size', update=_set_cam_values)
 
@@ -243,9 +254,14 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
             row.prop(tmg_cam_vars, 'cam_type', text='')
             row.prop(tmg_cam_vars, 'cam_sensor_format', text='')
             
-            row = col.row(align=True)
-            row.label(text="Focal Length")
-            row.prop(tmg_cam_vars, 'cam_flength', text='')
+            if tmg_cam_vars.cam_type != "ORTHO":
+                row = col.row(align=True)
+                row.label(text="Focal Length")
+                row.prop(tmg_cam_vars, 'cam_flength', text='')
+            else:
+                row = col.row(align=True)
+                row.label(text="Focal Length")
+                row.prop(tmg_cam_vars, 'cam_ortho_scale', text='')
             
             row = col.row(align=True)
             row.label(text="Sensor Size")
