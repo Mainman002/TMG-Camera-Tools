@@ -9,7 +9,7 @@ bl_info = {
     "author": "Johnathan Mueller",
     "descrtion": "A panel to set camera sensor values for rendering",
     "blender": (2, 80, 0),
-    "version": (0, 1, 1),
+    "version": (0, 1, 2),
     "location": "View3D (ObjectMode) > Sidebar > TMG_Camera Tab",
     "warning": "",
     "category": "Object"
@@ -100,9 +100,9 @@ def _change_scene_camera(self, context):
         
         active_dict['type'] = camera.data.type
         active_dict['fStop'] = camera.data.dof.aperture_fstop
-        active_dict['sensor_w'] = camera.data.lens
+        active_dict['focal_l'] = camera.data.lens 
         active_dict['ortho_scale'] = camera.data.ortho_scale
-        active_dict['focal_l'] = camera.data.sensor_width
+        active_dict['sensor_w'] = camera.data.sensor_width
         active_dict['use_dof'] = camera.data.dof.use_dof
         
         context.object.data.type = active_dict['type']
@@ -123,6 +123,9 @@ def _set_cam_values(self, context):
     print("Camera: ", camera.data.name)
     
     if camera:
+        active_dict['type'] = camera.data.type
+        active_dict['use_dof'] = camera.data.dof.use_dof
+        
         context.object.data.type = active_dict['type']
         context.object.data.lens = active_dict['focal_l']
         context.object.data.ortho_scale = active_dict['ortho_scale']
@@ -173,23 +176,29 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
         row = col.row(align=True)
         
         row.prop(tmg_cam_vars, 'scene_camera', text='')
+        
+        if context.space_data.lock_camera:
+            row.prop(context.space_data, 'lock_camera', text='', icon="LOCKVIEW_ON")
+        else:
+            row.prop(context.space_data, 'lock_camera', text='', icon="LOCKVIEW_OFF")
             
         if tmg_cam_vars.scene_camera and context.object.type == "CAMERA":
             row = col.row(align=True)
             row.prop(context.object.data, 'type', text='')
             row.prop(tmg_cam_vars, 'cam_sensor_format', text='')
             
+#            row = col.row(align=True)
+#            row.label(text="Focal Length")
+#            row.label(text="Sensor Size")
+            
             if context.object.data.type != "ORTHO":
                 row = col.row(align=True)
-                row.label(text="Focal Length")
                 row.prop(context.object.data, 'lens', text='')
             else:
                 row = col.row(align=True)
-                row.label(text="Focal Length")
                 row.prop(context.object.data, 'ortho_scale', text='')
 
-            row = col.row(align=True)
-            row.label(text="Sensor Size")
+#            row = col.row(align=True)
             row.prop(context.object.data, 'sensor_width', text='')
             
             row = col.row(align=True)
@@ -210,22 +219,13 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
                 col = layout.column(align=True)
 
             row = col.row(align=True)
-            row.prop(context.object.data.dof, 'use_dof', text='', icon="CON_OBJECTSOLVER")
             row.label(text="Use DOF")
+            row.prop(context.object.data.dof, 'use_dof', text='', icon="CON_OBJECTSOLVER")
             
             if context.object.data.dof.use_dof:
                 row = col.box()
                 row.prop(context.object.data.dof, 'focus_object', text='')
                 row.prop(context.object.data.dof, 'aperture_fstop', text='')
-                
-            row = col.row(align=True)
-            
-            if context.space_data.lock_camera:
-                row.prop(context.space_data, 'lock_camera', text='', icon="LOCKVIEW_ON")
-            else:
-                row.prop(context.space_data, 'lock_camera', text='', icon="LOCKVIEW_OFF")
-                
-            row.label(text="View Lock")
             
             
 class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
