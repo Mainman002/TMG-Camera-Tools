@@ -133,10 +133,14 @@ def _set_cam_values(self, context):
         context.space_data.lock_camera
         
         
+def _set_render_slot(self, context):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    slot = bpy.data.images["Render Result"].render_slots.active_index = tmg_cam_vars.render_slot
 
 class TMG_Camera_Properties(bpy.types.PropertyGroup):
-    
     scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, description='Scene active camera', update=_change_scene_camera)
+    render_slot : bpy.props.IntProperty(default=0, min=0, max=8, update=_set_render_slot)
     
     cam_sensor_format : bpy.props.EnumProperty(name='Camera Profile', default='0', description='Camera presets',
     items=[
@@ -170,7 +174,7 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
         
         row.prop(tmg_cam_vars, 'scene_camera', text='')
             
-        if tmg_cam_vars.scene_camera:
+        if tmg_cam_vars.scene_camera and context.object.type == "CAMERA":
             row = col.row(align=True)
             row.prop(context.object.data, 'type', text='')
             row.prop(tmg_cam_vars, 'cam_sensor_format', text='')
@@ -187,23 +191,100 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
             row = col.row(align=True)
             row.label(text="Sensor Size")
             row.prop(context.object.data, 'sensor_width', text='')
+            
+            row = col.row(align=True)
+            row.label(text="Sensor Fit")
+            row.prop(context.object.data, 'sensor_fit', text='')
+            
+            if context.object.data.sensor_fit == "HORIZONTAL":
+                col = col.box()
+                row = col.row(align=True)
+                row.label(text="Width")
+                row.prop(context.object.data, 'sensor_width', text='')
+                col = layout.column(align=True)
+            elif context.object.data.sensor_fit == "VERTICAL":
+                col = col.box()
+                row = col.row(align=True)
+                row.label(text="Height")
+                row.prop(context.object.data, 'sensor_height', text='')
+                col = layout.column(align=True)
 
             row = col.row(align=True)
-            row.label(text="F-Stop")
-            row.prop(context.object.data.dof, 'aperture_fstop', text='')
-            
-            row = col.row(align=True)
+            row.prop(context.object.data.dof, 'use_dof', text='', icon="CON_OBJECTSOLVER")
             row.label(text="Use DOF")
-            row.prop(context.object.data.dof, 'use_dof', text='')
+            
+            if context.object.data.dof.use_dof:
+                row = col.box()
+                row.prop(context.object.data.dof, 'focus_object', text='')
+                row.prop(context.object.data.dof, 'aperture_fstop', text='')
+                
+            row = col.row(align=True)
+            
+            if context.space_data.lock_camera:
+                row.prop(context.space_data, 'lock_camera', text='', icon="LOCKVIEW_ON")
+            else:
+                row.prop(context.space_data, 'lock_camera', text='', icon="LOCKVIEW_OFF")
+                
+            row.label(text="View Lock")
+            
+            
+class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
+    bl_idname = 'OBJECT_PT_tmg_render_panel'
+    bl_category = 'TMG Camera'
+    bl_label = 'Render Tools'
+    bl_context = "objectmode"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+
+    def draw(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        col = layout.column(align=True)
+        row = col.row(align=True)
+            
+        if tmg_cam_vars.scene_camera and context.object.type == "CAMERA":
             
             row = col.row(align=True)
-            row.label(text="Camera View Lock")
-            row.prop(context.space_data, 'lock_camera', text='')
+            row.label(text="Timeline")
+            row = col.row(align=True)
+            row.prop(scene, 'use_preview_range', text='')
+            row.prop(scene, 'frame_start', text='')
+            row.prop(scene, 'frame_end', text='')
+            
+            row = col.row(align=True)
+            row.label(text="Resolution")
+            row = col.row(align=True)
+            row.prop(scene.render, 'resolution_x', text='')
+            row.prop(scene.render, 'resolution_y', text='')
+            
+            row = col.row(align=True)
+            row.prop(scene.render, 'resolution_percentage', text='')
+            
+            row = col.row(align=True)
+            row.label(text="Aspect")
+            row = col.row(align=True)
+            row.prop(scene.render, 'pixel_aspect_x', text='')
+            row.prop(scene.render, 'pixel_aspect_y', text='')
+            
+            row = col.row(align=True)
+            row.label(text="Render")
+            
+            row = col.row(align=True)
+            row.prop(scene.render, 'engine', text='')
+            row.prop(tmg_cam_vars, 'render_slot', text='Slot')
+            row.prop(scene, 'use_nodes', text='', icon="NODE_COMPOSITING")
+            
+            row = col.row(align=True)
+            row.operator("render.render", text='Image', icon="CAMERA_DATA")
+            row.operator("render.render", text='Animation', icon="RENDER_ANIMATION").animation=True
         
 
 classes = (
     TMG_Camera_Properties,
     OBJECT_PT_TMG_Camera_Panel,
+    OBJECT_PT_TMG_Render_Panel,
 )
 
 
