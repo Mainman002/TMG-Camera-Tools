@@ -290,7 +290,7 @@ def register():
     for rsclass in classes:
         bpy.utils.register_class(rsclass)
         bpy.types.Scene.tmg_cam_vars = bpy.props.PointerProperty(type=TMG_Camera_Properties)
-        bpy.context.scene.tmg_cam_vars.scene_camera = bpy.data.scenes["Scene"].camera
+        # bpy.context.scene.tmg_cam_vars.scene_camera = bpy.data.scenes["Scene"].camera
 
 
 def unregister():
