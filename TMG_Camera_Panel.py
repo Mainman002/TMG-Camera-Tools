@@ -34,8 +34,6 @@ def select_camera():
     bpy.ops.object.select_all(action='DESELECT')
     camera = tmg_cam_vars.scene_camera
     
-    print(tmg_cam_vars.scene_camera)
-    
     if camera:
         bpy.data.scenes["Scene"].camera = camera
         
@@ -58,41 +56,6 @@ def select_camera():
     
     ob = camera
     return ob
-    return{'FINISHED'}
-
-
-def pre_set_type(ob, dict):
-    ob.data.type = dict["type"]
-    return{'FINISHED'}
-
-
-def pre_set_sensor(ob, dict):
-    ob.data.sensor_width = dict["sensor_w"]
-    return{'FINISHED'}
-
-
-def pre_set_depth(ob, dict):
-    ob.data.lens = dict["focal_l"]
-    return{'FINISHED'}
-
-
-def pre_set_dof(ob, dict):
-    ob.data.dof.aperture_fstop = dict["fStop"]
-    return{'FINISHED'}
-
-
-def main():
-    print("\nStart")
-    camera = select_camera()
-    print("Camera: ", camera.data.name)
-    
-    if camera:
-        pre_set_type(camera, active_dict)
-        pre_set_sensor(camera, active_dict)
-        pre_set_depth(camera, active_dict)
-        pre_set_dof(camera, active_dict)
-    
-    print("\nFinished")
     return{'FINISHED'}
 
 
@@ -208,14 +171,6 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     ('2', '80mm', ''),
     ('3', '210mm', '')], update=_change_camera_presets)
     
-#    active_dict : bpy.props.StringProperty(name='mm80', description='Selected camera profile')
-
-    
-    ## Default FBX Export Options
-#    exp_directory : bpy.props.StringProperty(name='Directory', description='Sets the folder directory path for the FBX models to export to')
-#    exp_use_selection : bpy.props.BoolProperty(default=True, description='If you want to export only selected or everything in your blend file (Might not work correctly)')
-#    exp_uvs_start_int : bpy.props.IntProperty(name='UV Start Index', default=1, min=0, soft_max=1, step=1, description='Integer value placed at the end of UV layer names')
-    
     cam_type : bpy.props.EnumProperty(name='Camera Perspective', default='PERSP', description='Camera perspective type',
     items=[
     ('PERSP', 'Perspective', ''),
@@ -290,13 +245,11 @@ def register():
     for rsclass in classes:
         bpy.utils.register_class(rsclass)
         bpy.types.Scene.tmg_cam_vars = bpy.props.PointerProperty(type=TMG_Camera_Properties)
-        # bpy.context.scene.tmg_cam_vars.scene_camera = bpy.data.scenes["Scene"].camera
 
 
 def unregister():
     for rsclass in classes:
         bpy.utils.unregister_class(rsclass)
-#        del bpy.types.Object.theChosenObject
 
 
 if __name__ == "__main__":
