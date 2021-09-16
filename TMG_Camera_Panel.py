@@ -9,7 +9,7 @@ bl_info = {
     "author": "Johnathan Mueller",
     "descrtion": "A panel to set camera sensor values for rendering",
     "blender": (2, 80, 0),
-    "version": (0, 1, 6),
+    "version": (0, 1, 0),
     "location": "View3D (ObjectMode) > Sidebar > TMG_Camera Tab",
     "warning": "",
     "category": "Object"
