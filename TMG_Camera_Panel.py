@@ -9,7 +9,7 @@ bl_info = {
     "author": "Johnathan Mueller",
     "descrtion": "A panel to set camera sensor values for rendering",
     "blender": (2, 80, 0),
-    "version": (0, 1, 0),
+    "version": (0, 1, 1),
     "location": "View3D (ObjectMode) > Sidebar > TMG_Camera Tab",
     "warning": "",
     "category": "Object"
@@ -63,9 +63,6 @@ def _change_camera_presets(self, context):
     scene = context.scene
     tmg_cam_vars = scene.tmg_cam_vars
     
-#    active_dict["type"] = "PERSP"
-#    active_dict["use_dof"] = True
-    
     if tmg_cam_vars.cam_sensor_format == '0':
         active_dict["fStop"] = 2.0
         active_dict["ortho_scale"] = 10
@@ -90,25 +87,12 @@ def _change_camera_presets(self, context):
         active_dict["focal_l"] = 210
         active_dict["sensor_w"] = 36
     
-#    tmg_cam_vars.cam_type = active_dict["type"]
-    tmg_cam_vars.cam_fstop = active_dict["fStop"]
-    tmg_cam_vars.cam_ortho_scale = active_dict["ortho_scale"]
-    tmg_cam_vars.cam_flength = active_dict["focal_l"]
-    tmg_cam_vars.cam_ssize = active_dict["sensor_w"]
-#    tmg_cam_vars.cam_use_dof = active_dict["use_dof"]
-    
-    bpy.context.space_data.lock_camera = tmg_cam_vars.cam_to_view
-    
     _set_cam_values(self, context)
-        
-#    main()
     
     
 def _change_scene_camera(self, context):
     scene = context.scene
     tmg_cam_vars = scene.tmg_cam_vars
-    
-#    camera = tmg_cam_vars.scene_camera
 
     camera = select_camera()
 
@@ -121,16 +105,14 @@ def _change_scene_camera(self, context):
         active_dict['focal_l'] = camera.data.sensor_width
         active_dict['use_dof'] = camera.data.dof.use_dof
         
-    #    bpy.data.scenes["Scene"].camera = camera
-
-        
-        tmg_cam_vars.cam_type    = active_dict['type']
-        tmg_cam_vars.cam_fstop   = active_dict['fStop']
-        tmg_cam_vars.cam_flength = active_dict['sensor_w']
-        tmg_cam_vars.cam_ortho_scale   = active_dict['ortho_scale']
-        tmg_cam_vars.cam_ssize   = active_dict['focal_l']
-        tmg_cam_vars.cam_use_dof = active_dict['use_dof']
-    
+        context.object.data.type = active_dict['type']
+        context.object.data.lens = active_dict['focal_l']
+        context.object.data.ortho_scale = active_dict['ortho_scale']
+                
+        context.object.data.sensor_width = active_dict['sensor_w']
+        context.object.data.dof.aperture_fstop = active_dict['fStop']
+        context.object.data.dof.use_dof = active_dict['use_dof']
+        context.space_data.lock_camera
 
 
 def _set_cam_values(self, context):
@@ -141,22 +123,14 @@ def _set_cam_values(self, context):
     print("Camera: ", camera.data.name)
     
     if camera:
-        active_dict["type"] = "PERSP"
-        
-        ## DOF
-#        print(tmg_cam_vars.cam_type)
-        camera.data.type = tmg_cam_vars.cam_type
-        camera.data.dof.aperture_fstop = tmg_cam_vars.cam_fstop
-        camera.data.ortho_scale = tmg_cam_vars.cam_ortho_scale
-        camera.data.lens = tmg_cam_vars.cam_flength
-        camera.data.sensor_width = tmg_cam_vars.cam_ssize
-        camera.data.dof.use_dof = tmg_cam_vars.cam_use_dof
-        
-        if bpy.context.space_data.type == 'VIEW_3D':
-            bpy.context.space_data.lock_camera = tmg_cam_vars.cam_to_view
-        
-#        active_dict["sensor_w"] = 36
-#        active_dict["focal_l"] = 24
+        context.object.data.type = active_dict['type']
+        context.object.data.lens = active_dict['focal_l']
+        context.object.data.ortho_scale = active_dict['ortho_scale']
+                
+        context.object.data.sensor_width = active_dict['sensor_w']
+        context.object.data.dof.aperture_fstop = active_dict['fStop']
+        context.object.data.dof.use_dof = active_dict['use_dof']
+        context.space_data.lock_camera
         
         
 
@@ -177,14 +151,6 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     ('ORTHO', 'Orthographic', ''),
     ('PANO', 'Panoramic', '')], update=_set_cam_values)
     
-    cam_use_dof : bpy.props.BoolProperty(default=True, description='Use depth of field', update=_set_cam_values)
-    cam_fstop : bpy.props.FloatProperty(name='F-Stop', default=2.0, soft_min=1.0, soft_max=50.0, step=1, precision=1, description='Camera aperture ratio', update=_set_cam_values)
-    cam_ortho_scale : bpy.props.FloatProperty(name='Ortho Scale', default=6, soft_min=1, soft_max=300, step=1, precision=1, description='Camera orthographic scale', update=_set_cam_values)
-    cam_flength : bpy.props.FloatProperty(name='Focal Length', default=24, soft_min=1, soft_max=300, step=1, precision=1, description='Camera focal length', update=_set_cam_values)
-    cam_ssize : bpy.props.FloatProperty(name='Sensor Size', default=36, soft_min=1, soft_max=300, step=1, precision=1, description='Camera sensor size', update=_set_cam_values)
-
-    cam_to_view : bpy.props.BoolProperty(default=False, description='Lock camera to view', update=_set_cam_values)
-
 
 class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
     bl_idname = 'OBJECT_PT_tmg_camera_panel'
@@ -206,33 +172,33 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
             
         if tmg_cam_vars.scene_camera:
             row = col.row(align=True)
-            row.prop(tmg_cam_vars, 'cam_type', text='')
+            row.prop(context.object.data, 'type', text='')
             row.prop(tmg_cam_vars, 'cam_sensor_format', text='')
             
-            if tmg_cam_vars.cam_type != "ORTHO":
+            if context.object.data.type != "ORTHO":
                 row = col.row(align=True)
                 row.label(text="Focal Length")
-                row.prop(tmg_cam_vars, 'cam_flength', text='')
+                row.prop(context.object.data, 'lens', text='')
             else:
                 row = col.row(align=True)
                 row.label(text="Focal Length")
-                row.prop(tmg_cam_vars, 'cam_ortho_scale', text='')
-            
+                row.prop(context.object.data, 'ortho_scale', text='')
+
             row = col.row(align=True)
             row.label(text="Sensor Size")
-            row.prop(tmg_cam_vars, 'cam_ssize', text='')
-            
+            row.prop(context.object.data, 'sensor_width', text='')
+
             row = col.row(align=True)
             row.label(text="F-Stop")
-            row.prop(tmg_cam_vars, 'cam_fstop', text='')
+            row.prop(context.object.data.dof, 'aperture_fstop', text='')
             
             row = col.row(align=True)
             row.label(text="Use DOF")
-            row.prop(tmg_cam_vars, 'cam_use_dof', text='')
+            row.prop(context.object.data.dof, 'use_dof', text='')
             
             row = col.row(align=True)
-            row.label(text="Camera To View")
-            row.prop(tmg_cam_vars, 'cam_to_view', text='')
+            row.label(text="Camera View Lock")
+            row.prop(context.space_data, 'lock_camera', text='')
         
 
 classes = (
