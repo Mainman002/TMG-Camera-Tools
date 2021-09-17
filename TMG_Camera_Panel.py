@@ -18,45 +18,14 @@ bl_info = {
 
 active_dict = {
     "type" : "PERSP", ##[ PERSP, ORTHO, PANO ]
-    "fStop" : 2.0,
-    "sensor_w" : 36,
-    "ortho_scale" : 6,
     "focal_l" : 24,
+    "sensor_w" : 36,
+    "sensor_h" : 36,
+    "ortho_scale" : 6,
     "use_dof" : True,
+    "fStop" : 2.0,
+    "track_to" : False,
 }
-
-
-def select_camera():
-    scene = bpy.context.scene
-    tmg_cam_vars = scene.tmg_cam_vars
-    
-    camera = None
-    bpy.ops.object.select_all(action='DESELECT')
-    camera = tmg_cam_vars.scene_camera
-    
-    if camera:
-        bpy.data.scenes["Scene"].camera = camera
-        
-        camera.select_set(state=True)
-        bpy.context.view_layer.objects.active = camera
-    
-        if bpy.context.active_object.type == "CAMERA":
-            active_dict['type'] = camera.data.type
-            active_dict['fStop'] = camera.data.dof.aperture_fstop
-            active_dict['sensor_w'] = camera.data.lens
-            active_dict['ortho_scale'] = camera.data.ortho_scale
-            active_dict['focal_l'] = camera.data.sensor_width
-            active_dict['use_dof'] = camera.data.dof.use_dof
-            
-        else:
-            camera.select_set(state=False)
-            bpy.context.view_layer.objects.active = None
-            camera = None
-            tmg_cam_vars.scene_camera = None
-    
-    ob = camera
-    return ob
-    return{'FINISHED'}
 
 
 def _change_camera_presets(self, context):
@@ -64,28 +33,32 @@ def _change_camera_presets(self, context):
     tmg_cam_vars = scene.tmg_cam_vars
     
     if tmg_cam_vars.cam_sensor_format == '0':
-        active_dict["fStop"] = 2.0
-        active_dict["ortho_scale"] = 10
         active_dict["focal_l"] = 24
         active_dict["sensor_w"] = 36
+        active_dict["sensor_h"] = 36
+        active_dict["ortho_scale"] = 10
+        active_dict["fStop"] = 2.0
         
     if tmg_cam_vars.cam_sensor_format == '1':
-        active_dict["fStop"] = 2.0
-        active_dict["ortho_scale"] = 5
         active_dict["focal_l"] = 50
         active_dict["sensor_w"] = 36
+        active_dict["sensor_h"] = 36
+        active_dict["ortho_scale"] = 5
+        active_dict["fStop"] = 2.0
         
     if tmg_cam_vars.cam_sensor_format == '2':
-        active_dict["fStop"] = 2.8
-        active_dict["ortho_scale"] = 2.8
         active_dict["focal_l"] = 80
         active_dict["sensor_w"] = 36
+        active_dict["sensor_h"] = 36
+        active_dict["ortho_scale"] = 2.8
+        active_dict["fStop"] = 2.8
         
     if tmg_cam_vars.cam_sensor_format == '3':
-        active_dict["fStop"] = 2.8
-        active_dict["ortho_scale"] = 1
         active_dict["focal_l"] = 210
         active_dict["sensor_w"] = 36
+        active_dict["sensor_h"] = 36
+        active_dict["ortho_scale"] = 1
+        active_dict["fStop"] = 2.8
     
     _set_cam_values(self, context)
     
@@ -94,24 +67,27 @@ def _change_scene_camera(self, context):
     scene = context.scene
     tmg_cam_vars = scene.tmg_cam_vars
 
-    camera = select_camera()
+    camera = tmg_cam_vars.scene_camera
 
     if camera and camera.type == "CAMERA":
+        scene.camera = camera
         
         active_dict['type'] = camera.data.type
-        active_dict['fStop'] = camera.data.dof.aperture_fstop
         active_dict['focal_l'] = camera.data.lens 
-        active_dict['ortho_scale'] = camera.data.ortho_scale
         active_dict['sensor_w'] = camera.data.sensor_width
+        active_dict['sensor_h'] = camera.data.sensor_height
+        active_dict['ortho_scale'] = camera.data.ortho_scale
         active_dict['use_dof'] = camera.data.dof.use_dof
+        active_dict['fStop'] = camera.data.dof.aperture_fstop
+#        active_dict['track_to'] = camera.data.dof.aperture_fstop
         
-        context.object.data.type = active_dict['type']
-        context.object.data.lens = active_dict['focal_l']
-        context.object.data.ortho_scale = active_dict['ortho_scale']
-                
-        context.object.data.sensor_width = active_dict['sensor_w']
-        context.object.data.dof.aperture_fstop = active_dict['fStop']
-        context.object.data.dof.use_dof = active_dict['use_dof']
+        camera.data.type = active_dict['type']
+        camera.data.lens = active_dict['focal_l']     
+        camera.data.sensor_width = active_dict['sensor_w']
+        camera.data.sensor_height = active_dict['sensor_h']
+        camera.data.ortho_scale = active_dict['ortho_scale']
+        camera.data.dof.use_dof = active_dict['use_dof']
+        camera.data.dof.aperture_fstop = active_dict['fStop']
         context.space_data.lock_camera
 
 
@@ -126,24 +102,58 @@ def _set_cam_values(self, context):
         active_dict['type'] = camera.data.type
         active_dict['use_dof'] = camera.data.dof.use_dof
         
-        context.object.data.type = active_dict['type']
-        context.object.data.lens = active_dict['focal_l']
-        context.object.data.ortho_scale = active_dict['ortho_scale']
-                
-        context.object.data.sensor_width = active_dict['sensor_w']
-        context.object.data.dof.aperture_fstop = active_dict['fStop']
-        context.object.data.dof.use_dof = active_dict['use_dof']
+        camera.data.type = active_dict['type']
+        camera.data.lens = active_dict['focal_l']
+        camera.data.sensor_width = active_dict['sensor_w']
+        camera.data.sensor_height = active_dict['sensor_h']
+        camera.data.ortho_scale = active_dict['ortho_scale']
+        camera.data.dof.use_dof = active_dict['use_dof']
+        camera.data.dof.aperture_fstop = active_dict['fStop']
         context.space_data.lock_camera
         
         
 def _set_render_slot(self, context):
     scene = context.scene
     tmg_cam_vars = scene.tmg_cam_vars
-    slot = bpy.data.images["Render Result"].render_slots.active_index = tmg_cam_vars.render_slot
+    try:
+        slot = bpy.data.images["Render Result"].render_slots.active_index = int(tmg_cam_vars.render_slot)-1
+    except:
+        slot = None
+        
+        
+#def _add_track_to(self, context):
+#    scene = context.scene
+#    tmg_cam_vars = scene.tmg_cam_vars
+#    camera = tmg_cam_vars.scene_camera
+#    
+#    if tmg_cam_vars.track_to:
+#        cons = []
+#        found = False
+#        
+#        cons = camera.constraints.items()
+#        
+#        for con in cons:
+#            if con[0] == "Track To":
+#                found = True
+#            
+#        if not found:
+#            camera.constraints.new('TRACK_TO')
+#            
+#        for name, con in camera.constraints.items():
+#            if con.type == "TRACK_TO":
+#                con.target = tmg_cam_vars.cam_track_ob
+#                
+#    else:
+#        for name, con in camera.constraints.items():
+#            if con.type == "TRACK_TO":
+#                camera.constraints.remove(con)
+
 
 class TMG_Camera_Properties(bpy.types.PropertyGroup):
     scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, description='Scene active camera', update=_change_scene_camera)
-    render_slot : bpy.props.IntProperty(default=0, min=0, max=8, update=_set_render_slot)
+#    cam_track_ob : bpy.props.PointerProperty(name='Track Object', type=bpy.types.Object, description='Object for camera to track', update=_add_track_to)
+    render_slot : bpy.props.IntProperty(default=1, min=1, max=8, update=_set_render_slot)
+#    track_to : bpy.props.BoolProperty(default=False, update=_add_track_to)
     
     cam_sensor_format : bpy.props.EnumProperty(name='Camera Profile', default='0', description='Camera presets',
     items=[
@@ -183,13 +193,18 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
             row.prop(context.space_data, 'lock_camera', text='', icon="LOCKVIEW_OFF")
             
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            
+#            row = col.row(align=True)
+#            row.label(text="Perspective")
+#            row.label(text="Presets")
+            
             row = col.row(align=True)
             row.prop(tmg_cam_vars.scene_camera.data, 'type', text='')
             row.prop(tmg_cam_vars, 'cam_sensor_format', text='')
             
-#            row = col.row(align=True)
-#            row.label(text="Focal Length")
-#            row.label(text="Sensor Size")
+            row = col.row(align=True)
+            row.label(text="Focal Length")
+            row.prop(tmg_cam_vars.scene_camera.data, 'sensor_fit', text='')
             
             if tmg_cam_vars.scene_camera.data.type != "ORTHO":
                 row = col.row(align=True)
@@ -198,25 +213,18 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
                 row = col.row(align=True)
                 row.prop(tmg_cam_vars.scene_camera.data, 'ortho_scale', text='')
 
-#            row = col.row(align=True)
-            row.prop(tmg_cam_vars.scene_camera.data, 'sensor_width', text='')
-            
-            row = col.row(align=True)
-            row.label(text="Sensor Fit")
-            row.prop(tmg_cam_vars.scene_camera.data, 'sensor_fit', text='')
-            
-            if tmg_cam_vars.scene_camera.data.sensor_fit == "HORIZONTAL":
-                col = col.box()
-                row = col.row(align=True)
-                row.label(text="Width")
+            if tmg_cam_vars.scene_camera.data.sensor_fit != "VERTICAL":
                 row.prop(tmg_cam_vars.scene_camera.data, 'sensor_width', text='')
-                col = layout.column(align=True)
-            elif tmg_cam_vars.scene_camera.data.sensor_fit == "VERTICAL":
-                col = col.box()
-                row = col.row(align=True)
-                row.label(text="Height")
+            else:
                 row.prop(tmg_cam_vars.scene_camera.data, 'sensor_height', text='')
-                col = layout.column(align=True)
+
+#            row = col.row(align=True)
+#            row.label(text="Track Constraint")
+#            
+#            row = col.row(align=True)
+#            row.prop(tmg_cam_vars, 'cam_track_ob', text='')
+#            row.prop(tmg_cam_vars, 'track_to', text='', icon="CON_TRACKTO")
+
 
             row = col.row(align=True)
             row.label(text="Use DOF")
