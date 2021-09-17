@@ -9,7 +9,7 @@ bl_info = {
     "author": "Johnathan Mueller",
     "descrtion": "A panel to set camera sensor values for rendering",
     "blender": (2, 80, 0),
-    "version": (0, 1, 2),
+    "version": (0, 1, 3),
     "location": "View3D (ObjectMode) > Sidebar > TMG_Camera Tab",
     "warning": "",
     "category": "Object"
@@ -182,50 +182,50 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
         else:
             row.prop(context.space_data, 'lock_camera', text='', icon="LOCKVIEW_OFF")
             
-        if tmg_cam_vars.scene_camera and context.object.type == "CAMERA":
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
             row = col.row(align=True)
-            row.prop(context.object.data, 'type', text='')
+            row.prop(tmg_cam_vars.scene_camera.data, 'type', text='')
             row.prop(tmg_cam_vars, 'cam_sensor_format', text='')
             
 #            row = col.row(align=True)
 #            row.label(text="Focal Length")
 #            row.label(text="Sensor Size")
             
-            if context.object.data.type != "ORTHO":
+            if tmg_cam_vars.scene_camera.data.type != "ORTHO":
                 row = col.row(align=True)
-                row.prop(context.object.data, 'lens', text='')
+                row.prop(tmg_cam_vars.scene_camera.data, 'lens', text='')
             else:
                 row = col.row(align=True)
-                row.prop(context.object.data, 'ortho_scale', text='')
+                row.prop(tmg_cam_vars.scene_camera.data, 'ortho_scale', text='')
 
 #            row = col.row(align=True)
-            row.prop(context.object.data, 'sensor_width', text='')
+            row.prop(tmg_cam_vars.scene_camera.data, 'sensor_width', text='')
             
             row = col.row(align=True)
             row.label(text="Sensor Fit")
-            row.prop(context.object.data, 'sensor_fit', text='')
+            row.prop(tmg_cam_vars.scene_camera.data, 'sensor_fit', text='')
             
-            if context.object.data.sensor_fit == "HORIZONTAL":
+            if tmg_cam_vars.scene_camera.data.sensor_fit == "HORIZONTAL":
                 col = col.box()
                 row = col.row(align=True)
                 row.label(text="Width")
-                row.prop(context.object.data, 'sensor_width', text='')
+                row.prop(tmg_cam_vars.scene_camera.data, 'sensor_width', text='')
                 col = layout.column(align=True)
-            elif context.object.data.sensor_fit == "VERTICAL":
+            elif tmg_cam_vars.scene_camera.data.sensor_fit == "VERTICAL":
                 col = col.box()
                 row = col.row(align=True)
                 row.label(text="Height")
-                row.prop(context.object.data, 'sensor_height', text='')
+                row.prop(tmg_cam_vars.scene_camera.data, 'sensor_height', text='')
                 col = layout.column(align=True)
 
             row = col.row(align=True)
             row.label(text="Use DOF")
-            row.prop(context.object.data.dof, 'use_dof', text='', icon="CON_OBJECTSOLVER")
+            row.prop(tmg_cam_vars.scene_camera.data.dof, 'use_dof', text='', icon="CON_OBJECTSOLVER")
             
-            if context.object.data.dof.use_dof:
+            if tmg_cam_vars.scene_camera.data.dof.use_dof:
                 row = col.box()
-                row.prop(context.object.data.dof, 'focus_object', text='')
-                row.prop(context.object.data.dof, 'aperture_fstop', text='')
+                row.prop(tmg_cam_vars.scene_camera.data.dof, 'focus_object', text='')
+                row.prop(tmg_cam_vars.scene_camera.data.dof, 'aperture_fstop', text='')
             
             
 class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
@@ -244,7 +244,7 @@ class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
         col = layout.column(align=True)
         row = col.row(align=True)
             
-        if tmg_cam_vars.scene_camera and context.object.type == "CAMERA":
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
             
             row = col.row(align=True)
             row.label(text="Timeline")
