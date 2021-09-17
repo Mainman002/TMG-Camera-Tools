@@ -22,6 +22,8 @@ active_dict = {
     "sensor_w" : 36,
     "sensor_h" : 36,
     "ortho_scale" : 6,
+    "clip_start" : 0.1,
+    "clip_end" : 100,
     "use_dof" : True,
     "fStop" : 2.0,
     "track_to" : False,
@@ -77,6 +79,8 @@ def _change_scene_camera(self, context):
         active_dict['sensor_w'] = camera.data.sensor_width
         active_dict['sensor_h'] = camera.data.sensor_height
         active_dict['ortho_scale'] = camera.data.ortho_scale
+        active_dict['clip_start'] = camera.data.clip_start
+        active_dict['clip_end'] = camera.data.clip_end
         active_dict['use_dof'] = camera.data.dof.use_dof
         active_dict['fStop'] = camera.data.dof.aperture_fstop
 #        active_dict['track_to'] = camera.data.dof.aperture_fstop
@@ -86,6 +90,8 @@ def _change_scene_camera(self, context):
         camera.data.sensor_width = active_dict['sensor_w']
         camera.data.sensor_height = active_dict['sensor_h']
         camera.data.ortho_scale = active_dict['ortho_scale']
+        camera.data.clip_start = active_dict['clip_start']
+        camera.data.clip_end = active_dict['clip_end']
         camera.data.dof.use_dof = active_dict['use_dof']
         camera.data.dof.aperture_fstop = active_dict['fStop']
         context.space_data.lock_camera
@@ -107,6 +113,8 @@ def _set_cam_values(self, context):
         camera.data.sensor_width = active_dict['sensor_w']
         camera.data.sensor_height = active_dict['sensor_h']
         camera.data.ortho_scale = active_dict['ortho_scale']
+        camera.data.clip_start = active_dict['clip_start']
+        camera.data.clip_end = active_dict['clip_end']
         camera.data.dof.use_dof = active_dict['use_dof']
         camera.data.dof.aperture_fstop = active_dict['fStop']
         context.space_data.lock_camera
@@ -149,8 +157,12 @@ def _set_render_slot(self, context):
 #                camera.constraints.remove(con)
 
 
+def _tmg_search_cameras(self, object):
+    return object.type == 'CAMERA'
+
+
 class TMG_Camera_Properties(bpy.types.PropertyGroup):
-    scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, description='Scene active camera', update=_change_scene_camera)
+    scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, poll=_tmg_search_cameras, description='Scene active camera', update=_change_scene_camera)
 #    cam_track_ob : bpy.props.PointerProperty(name='Track Object', type=bpy.types.Object, description='Object for camera to track', update=_add_track_to)
     render_slot : bpy.props.IntProperty(default=1, min=1, max=8, update=_set_render_slot)
 #    track_to : bpy.props.BoolProperty(default=False, update=_add_track_to)
@@ -217,6 +229,13 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
                 row.prop(tmg_cam_vars.scene_camera.data, 'sensor_width', text='')
             else:
                 row.prop(tmg_cam_vars.scene_camera.data, 'sensor_height', text='')
+                
+            row = col.row(align=True)
+            row.label(text="Clip Area")
+            
+            row = col.row(align=True)
+            row.prop(tmg_cam_vars.scene_camera.data, 'clip_start', text='')
+            row.prop(tmg_cam_vars.scene_camera.data, 'clip_end', text='')
 
 #            row = col.row(align=True)
 #            row.label(text="Track Constraint")
