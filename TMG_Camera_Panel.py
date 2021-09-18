@@ -310,10 +310,11 @@ class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
             row.operator("render.render", text='Animation', icon="RENDER_ANIMATION").animation=True
             
             row = col.row(align=True)
-            row.prop(scene.render, 'filepath', text='')
+            row.prop(scene.render.image_settings, 'file_format', text='')
+            row.prop(scene.render.image_settings, 'color_mode', text='')
             
             row = col.row(align=True)
-            row.prop(scene.render.image_settings, 'file_format', text='')
+            row.prop(scene.render, 'filepath', text='')
         
 
 classes = (
