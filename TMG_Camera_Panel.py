@@ -9,7 +9,7 @@ bl_info = {
     "author": "Johnathan Mueller",
     "descrtion": "A panel to set camera sensor values for rendering",
     "blender": (2, 80, 0),
-    "version": (0, 1, 3),
+    "version": (0, 1, 4),
     "location": "View3D (ObjectMode) > Sidebar > TMG_Camera Tab",
     "warning": "",
     "category": "Object"
@@ -107,6 +107,8 @@ def _set_cam_values(self, context):
     if camera:
         active_dict['type'] = camera.data.type
         active_dict['use_dof'] = camera.data.dof.use_dof
+        active_dict['clip_start'] = camera.data.clip_start
+        active_dict['clip_end'] = camera.data.clip_end
         
         camera.data.type = active_dict['type']
         camera.data.lens = active_dict['focal_l']
@@ -306,6 +308,12 @@ class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
             row = col.row(align=True)
             row.operator("render.render", text='Image', icon="CAMERA_DATA")
             row.operator("render.render", text='Animation', icon="RENDER_ANIMATION").animation=True
+            
+            row = col.row(align=True)
+            row.prop(scene.render, 'filepath', text='')
+            
+            row = col.row(align=True)
+            row.prop(scene.render.image_settings, 'file_format', text='')
         
 
 classes = (
