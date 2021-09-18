@@ -9,7 +9,7 @@ bl_info = {
     "author": "Johnathan Mueller",
     "descrtion": "A panel to set camera sensor values for rendering",
     "blender": (2, 80, 0),
-    "version": (0, 1, 4),
+    "version": (0, 1, 5),
     "location": "View3D (ObjectMode) > Sidebar > TMG_Camera Tab",
     "warning": "",
     "category": "Object"
@@ -159,15 +159,36 @@ def _set_render_slot(self, context):
 #                camera.constraints.remove(con)
 
 
+#def _constraints(self, context):
+#    for type, con in cons:
+#        if con.type == "FLOOR":
+#            con.target
+#            con.offset
+#        
+#        if con.type == "FOLLOW_PATH":
+#            con.target
+#            
+#            if con.use_fixed_location:
+#                con.offset_factor
+#            else:
+#                con.offset
+#            
+#            con.use_fixed_location
+#            con.use_curve_radius
+#            con.use_curve_follow
+#            
+#        if con.type == "TRACK_TO":
+#            con.target
+#            con.influence
+
+
 def _tmg_search_cameras(self, object):
     return object.type == 'CAMERA'
 
 
 class TMG_Camera_Properties(bpy.types.PropertyGroup):
     scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, poll=_tmg_search_cameras, description='Scene active camera', update=_change_scene_camera)
-#    cam_track_ob : bpy.props.PointerProperty(name='Track Object', type=bpy.types.Object, description='Object for camera to track', update=_add_track_to)
     render_slot : bpy.props.IntProperty(default=1, min=1, max=8, update=_set_render_slot)
-#    track_to : bpy.props.BoolProperty(default=False, update=_add_track_to)
     
     cam_sensor_format : bpy.props.EnumProperty(name='Camera Profile', default='0', description='Camera presets',
     items=[
@@ -207,11 +228,6 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
             row.prop(context.space_data, 'lock_camera', text='', icon="LOCKVIEW_OFF")
             
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
-            
-#            row = col.row(align=True)
-#            row.label(text="Perspective")
-#            row.label(text="Presets")
-            
             row = col.row(align=True)
             row.prop(tmg_cam_vars.scene_camera.data, 'type', text='')
             row.prop(tmg_cam_vars, 'cam_sensor_format', text='')
@@ -239,14 +255,6 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
             row.prop(tmg_cam_vars.scene_camera.data, 'clip_start', text='')
             row.prop(tmg_cam_vars.scene_camera.data, 'clip_end', text='')
 
-#            row = col.row(align=True)
-#            row.label(text="Track Constraint")
-#            
-#            row = col.row(align=True)
-#            row.prop(tmg_cam_vars, 'cam_track_ob', text='')
-#            row.prop(tmg_cam_vars, 'track_to', text='', icon="CON_TRACKTO")
-
-
             row = col.row(align=True)
             row.label(text="Use DOF")
             row.prop(tmg_cam_vars.scene_camera.data.dof, 'use_dof', text='', icon="CON_OBJECTSOLVER")
@@ -256,6 +264,59 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
                 row.prop(tmg_cam_vars.scene_camera.data.dof, 'focus_object', text='')
                 row.prop(tmg_cam_vars.scene_camera.data.dof, 'aperture_fstop', text='')
             
+            
+class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
+    bl_idname = 'OBJECT_PT_tmg_constraints_panel'
+    bl_category = 'TMG Camera'
+    bl_label = 'Constraint Tools'
+    bl_context = "objectmode"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+
+    def draw(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            cons = []
+            found = False
+            
+            camera = tmg_cam_vars.scene_camera
+            cons = camera.constraints.items()
+            
+            if len(cons) > 0:
+                row = col.row(align=True)
+                row.label(text="Constraints")
+                
+            for type, con in cons:
+                if con.type == "FLOOR":
+                    row = col.row(align=True)
+                    row.prop(con, 'target', text='')
+                    row.prop(con, 'offset', text='')
+                
+                if con.type == "FOLLOW_PATH":
+                    row = col.row(align=True)
+                    row.prop(con, 'target', text='')
+                    
+                    row = col.row(align=True)
+                    
+                    if con.use_fixed_location:
+                        row.prop(con, 'offset_factor', text='')
+                    else:
+                        row.prop(con, 'offset', text='')
+                    
+                    row.prop(con, 'use_fixed_location', text='', icon="CON_LOCLIMIT")
+                    row.prop(con, 'use_curve_radius', text='', icon="CURVE_BEZCIRCLE")
+                    row.prop(con, 'use_curve_follow', text='', icon="CON_FOLLOWPATH")
+                    
+                if con.type == "TRACK_TO":
+                    row = col.row(align=True)
+                    row.prop(con, 'target', text='')
+                    row.prop(con, 'influence', text='')
             
 class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
     bl_idname = 'OBJECT_PT_tmg_render_panel'
@@ -320,6 +381,7 @@ class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
 classes = (
     TMG_Camera_Properties,
     OBJECT_PT_TMG_Camera_Panel,
+    OBJECT_PT_TMG_Constraints_Panel,
     OBJECT_PT_TMG_Render_Panel,
 )
 
