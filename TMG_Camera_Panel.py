@@ -27,6 +27,9 @@ active_dict = {
     "use_dof" : True,
     "fStop" : 2.0,
     "track_to" : False,
+    "cam_floor" : False,
+    "cam_follow_path" : False,
+    "cam_track_to" : False,
 }
 
 
@@ -83,6 +86,23 @@ def _change_scene_camera(self, context):
         active_dict['clip_end'] = camera.data.clip_end
         active_dict['use_dof'] = camera.data.dof.use_dof
         active_dict['fStop'] = camera.data.dof.aperture_fstop
+        
+#        for type, con in camera.constraints.items():
+#            if con.type == "FLOOR":
+#                active_dict['cam_floor'] = True
+#            else:
+#                active_dict['cam_floor'] = False
+#            
+#            if con.type == "FOLLOW_PATH":
+#                active_dict['cam_follow_path'] = True
+#            else:
+#                active_dict['cam_follow_path'] = False
+#                
+#            if con.type == "TRACK_TO":
+#                active_dict['cam_track_to'] = True
+#            else:
+#                active_dict['cam_track_to'] = False
+        
 #        active_dict['track_to'] = camera.data.dof.aperture_fstop
         
         camera.data.type = active_dict['type']
@@ -95,6 +115,10 @@ def _change_scene_camera(self, context):
         camera.data.dof.use_dof = active_dict['use_dof']
         camera.data.dof.aperture_fstop = active_dict['fStop']
         context.space_data.lock_camera
+        
+#        tmg_cam_vars.cam_floor = active_dict['cam_floor']
+#        tmg_cam_vars.cam_follow_path = active_dict['cam_follow_path']
+#        tmg_cam_vars.cam_track_to = active_dict['cam_track_to']
 
 
 def _set_cam_values(self, context):
@@ -121,6 +145,10 @@ def _set_cam_values(self, context):
         camera.data.dof.aperture_fstop = active_dict['fStop']
         context.space_data.lock_camera
         
+#        tmg_cam_vars.cam_floor = active_dict['cam_floor']
+#        tmg_cam_vars.cam_follow_path = active_dict['cam_follow_path']
+#        tmg_cam_vars.cam_track_to = active_dict['cam_track_to']
+        
         
 def _set_render_slot(self, context):
     scene = context.scene
@@ -129,57 +157,49 @@ def _set_render_slot(self, context):
         slot = bpy.data.images["Render Result"].render_slots.active_index = int(tmg_cam_vars.render_slot)-1
     except:
         slot = None
+   
+   
+def _add_floor(self, context):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    camera = tmg_cam_vars.scene_camera
+    type = "FLOOR"
+    
+    if tmg_cam_vars.cam_floor:
+        camera.constraints.new(type)
+    else:
+        for name, con in camera.constraints.items():
+            if con.type == type:
+                camera.constraints.remove(con)
+       
         
-        
-#def _add_track_to(self, context):
-#    scene = context.scene
-#    tmg_cam_vars = scene.tmg_cam_vars
-#    camera = tmg_cam_vars.scene_camera
-#    
-#    if tmg_cam_vars.track_to:
-#        cons = []
-#        found = False
-#        
-#        cons = camera.constraints.items()
-#        
-#        for con in cons:
-#            if con[0] == "Track To":
-#                found = True
-#            
-#        if not found:
-#            camera.constraints.new('TRACK_TO')
-#            
-#        for name, con in camera.constraints.items():
-#            if con.type == "TRACK_TO":
-#                con.target = tmg_cam_vars.cam_track_ob
-#                
-#    else:
-#        for name, con in camera.constraints.items():
-#            if con.type == "TRACK_TO":
-#                camera.constraints.remove(con)
+def _add_follow_path(self, context):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    camera = tmg_cam_vars.scene_camera
+    type = "FOLLOW_PATH"
+    
+    if tmg_cam_vars.cam_follow_path:
+        tcon = camera.constraints.new(type)
+        tcon.use_fixed_location = True
+    else:
+        for name, con in camera.constraints.items():
+            if con.type == type:
+                camera.constraints.remove(con)
 
 
-#def _constraints(self, context):
-#    for type, con in cons:
-#        if con.type == "FLOOR":
-#            con.target
-#            con.offset
-#        
-#        if con.type == "FOLLOW_PATH":
-#            con.target
-#            
-#            if con.use_fixed_location:
-#                con.offset_factor
-#            else:
-#                con.offset
-#            
-#            con.use_fixed_location
-#            con.use_curve_radius
-#            con.use_curve_follow
-#            
-#        if con.type == "TRACK_TO":
-#            con.target
-#            con.influence
+def _add_track_to(self, context):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    camera = tmg_cam_vars.scene_camera
+    type = "TRACK_TO"
+    
+    if tmg_cam_vars.cam_track_to:
+        camera.constraints.new(type)
+    else:
+        for name, con in camera.constraints.items():
+            if con.type == type:
+                camera.constraints.remove(con)
 
 
 def _tmg_search_cameras(self, object):
@@ -189,6 +209,10 @@ def _tmg_search_cameras(self, object):
 class TMG_Camera_Properties(bpy.types.PropertyGroup):
     scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, poll=_tmg_search_cameras, description='Scene active camera', update=_change_scene_camera)
     render_slot : bpy.props.IntProperty(default=1, min=1, max=8, update=_set_render_slot)
+    
+    cam_floor : bpy.props.BoolProperty(default=False, update=_add_floor)
+    cam_follow_path : bpy.props.BoolProperty(default=False, update=_add_follow_path)
+    cam_track_to : bpy.props.BoolProperty(default=False, update=_add_track_to)
     
     cam_sensor_format : bpy.props.EnumProperty(name='Camera Profile', default='0', description='Camera presets',
     items=[
@@ -282,20 +306,25 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
         row = col.row(align=True)
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
-            cons = []
-            found = False
-            
             camera = tmg_cam_vars.scene_camera
             cons = camera.constraints.items()
             
-            if len(cons) > 0:
-                row = col.row(align=True)
-                row.label(text="Constraints")
+#            row = col.row(align=True)
+#            row.label(text="Add Constraints")
+            
+            row = col.row(align=True)
+            row.prop(tmg_cam_vars, 'cam_floor', text='', icon="CON_FLOOR")
+            row.prop(tmg_cam_vars, 'cam_follow_path', text='', icon="CON_FOLLOWPATH")
+            row.prop(tmg_cam_vars, 'cam_track_to', text='', icon="CON_TRACKTO")
+            
+#            if len(cons) > 0:
+#                row = col.row(align=True)
+#                row.label(text="Constraints")
                 
             for type, con in cons:
                 if con.type == "FLOOR":
                     row = col.row(align=True)
-                    row.label(text="Floor")
+                    row.label(text=con.name)
                 
                     row = col.row(align=True)
                     row.prop(con, 'target', text='')
@@ -303,7 +332,7 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
                 
                 if con.type == "FOLLOW_PATH":
                     row = col.row(align=True)
-                    row.label(text="Follow Path")
+                    row.label(text=con.name)
                     
                     row = col.row(align=True)
                     row.prop(con, 'target', text='')
@@ -321,7 +350,7 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
                     
                 if con.type == "TRACK_TO":
                     row = col.row(align=True)
-                    row.label(text="Track To")
+                    row.label(text=con.name)
                     
                     row = col.row(align=True)
                     row.prop(con, 'target', text='')
