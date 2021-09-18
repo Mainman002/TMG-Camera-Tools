@@ -295,10 +295,16 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
             for type, con in cons:
                 if con.type == "FLOOR":
                     row = col.row(align=True)
+                    row.label(text="Floor")
+                
+                    row = col.row(align=True)
                     row.prop(con, 'target', text='')
                     row.prop(con, 'offset', text='')
                 
                 if con.type == "FOLLOW_PATH":
+                    row = col.row(align=True)
+                    row.label(text="Follow Path")
+                    
                     row = col.row(align=True)
                     row.prop(con, 'target', text='')
                     
@@ -314,6 +320,9 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
                     row.prop(con, 'use_curve_follow', text='', icon="CON_FOLLOWPATH")
                     
                 if con.type == "TRACK_TO":
+                    row = col.row(align=True)
+                    row.label(text="Track To")
+                    
                     row = col.row(align=True)
                     row.prop(con, 'target', text='')
                     row.prop(con, 'influence', text='')
