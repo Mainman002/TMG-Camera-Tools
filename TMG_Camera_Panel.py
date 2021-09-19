@@ -85,24 +85,7 @@ def _change_scene_camera(self, context):
         active_dict['clip_start'] = camera.data.clip_start
         active_dict['clip_end'] = camera.data.clip_end
         active_dict['use_dof'] = camera.data.dof.use_dof
-        active_dict['fStop'] = camera.data.dof.aperture_fstop
-        
-#        for type, con in camera.constraints.items():
-#            if con.type == "FLOOR":
-#                active_dict['cam_floor'] = True
-#            else:
-#                active_dict['cam_floor'] = False
-#            
-#            if con.type == "FOLLOW_PATH":
-#                active_dict['cam_follow_path'] = True
-#            else:
-#                active_dict['cam_follow_path'] = False
-#                
-#            if con.type == "TRACK_TO":
-#                active_dict['cam_track_to'] = True
-#            else:
-#                active_dict['cam_track_to'] = False
-        
+        active_dict['fStop'] = camera.data.dof.aperture_fstop 
 #        active_dict['track_to'] = camera.data.dof.aperture_fstop
         
         camera.data.type = active_dict['type']
@@ -115,10 +98,6 @@ def _change_scene_camera(self, context):
         camera.data.dof.use_dof = active_dict['use_dof']
         camera.data.dof.aperture_fstop = active_dict['fStop']
         context.space_data.lock_camera
-        
-#        tmg_cam_vars.cam_floor = active_dict['cam_floor']
-#        tmg_cam_vars.cam_follow_path = active_dict['cam_follow_path']
-#        tmg_cam_vars.cam_track_to = active_dict['cam_track_to']
 
 
 def _set_cam_values(self, context):
@@ -145,10 +124,6 @@ def _set_cam_values(self, context):
         camera.data.dof.aperture_fstop = active_dict['fStop']
         context.space_data.lock_camera
         
-#        tmg_cam_vars.cam_floor = active_dict['cam_floor']
-#        tmg_cam_vars.cam_follow_path = active_dict['cam_follow_path']
-#        tmg_cam_vars.cam_track_to = active_dict['cam_track_to']
-        
         
 def _set_render_slot(self, context):
     scene = context.scene
@@ -159,60 +134,55 @@ def _set_render_slot(self, context):
         slot = None
    
    
-def _add_floor(self, context):
+def _add_constraint(self, context, _con):
     scene = context.scene
     tmg_cam_vars = scene.tmg_cam_vars
     camera = tmg_cam_vars.scene_camera
-    type = "FLOOR"
-    
-    if tmg_cam_vars.cam_floor:
-        camera.constraints.new(type)
-    else:
-        for name, con in camera.constraints.items():
-            if con.type == type:
-                camera.constraints.remove(con)
+
+    camera.constraints.new(_con)
        
-        
-def _add_follow_path(self, context):
+       
+def _remove_constraint(self, context, _con):
     scene = context.scene
     tmg_cam_vars = scene.tmg_cam_vars
     camera = tmg_cam_vars.scene_camera
-    type = "FOLLOW_PATH"
     
-    if tmg_cam_vars.cam_follow_path:
-        tcon = camera.constraints.new(type)
-        tcon.use_fixed_location = True
-    else:
-        for name, con in camera.constraints.items():
-            if con.type == type:
-                camera.constraints.remove(con)
-
-
-def _add_track_to(self, context):
-    scene = context.scene
-    tmg_cam_vars = scene.tmg_cam_vars
-    camera = tmg_cam_vars.scene_camera
-    type = "TRACK_TO"
-    
-    if tmg_cam_vars.cam_track_to:
-        camera.constraints.new(type)
-    else:
-        for name, con in camera.constraints.items():
-            if con.type == type:
-                camera.constraints.remove(con)
+    for name, con in camera.constraints.items():
+        if con.type == _con:
+            camera.constraints.remove(con)
 
 
 def _tmg_search_cameras(self, object):
     return object.type == 'CAMERA'
 
 
+class OBJECT_OT_Add_Constraint(bpy.types.Operator):
+    """Add constraint based on type"""
+    bl_idname = 'object.tmg_add_constraint'
+    bl_label = 'Add Constraint'
+    
+    con : bpy.props.StringProperty(name="FLOOR")
+    
+    def execute(self, context):
+        _add_constraint(self, context, self.con)
+        return {'FINISHED'}
+    
+    
+class OBJECT_OT_Remove_Constraint(bpy.types.Operator):
+    """Remove all constraints of type"""
+    bl_idname = 'object.tmg_remove_constraint'
+    bl_label = 'Remove Constraint'
+    
+    con : bpy.props.StringProperty(name="FLOOR")
+    
+    def execute(self, context):
+        _remove_constraint(self, context, self.con)
+        return {'FINISHED'}
+
+
 class TMG_Camera_Properties(bpy.types.PropertyGroup):
     scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, poll=_tmg_search_cameras, description='Scene active camera', update=_change_scene_camera)
     render_slot : bpy.props.IntProperty(default=1, min=1, max=8, update=_set_render_slot)
-    
-    cam_floor : bpy.props.BoolProperty(default=False, update=_add_floor)
-    cam_follow_path : bpy.props.BoolProperty(default=False, update=_add_follow_path)
-    cam_track_to : bpy.props.BoolProperty(default=False, update=_add_track_to)
     
     cam_sensor_format : bpy.props.EnumProperty(name='Camera Profile', default='0', description='Camera presets',
     items=[
@@ -310,31 +280,56 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
             cons = camera.constraints.items()
             
 #            row = col.row(align=True)
-#            row.label(text="Add Constraints")
+            row.label(text="Add Constraints")
             
             row = col.row(align=True)
-            row.prop(tmg_cam_vars, 'cam_floor', text='', icon="CON_FLOOR")
-            row.prop(tmg_cam_vars, 'cam_follow_path', text='', icon="CON_FOLLOWPATH")
-            row.prop(tmg_cam_vars, 'cam_track_to', text='', icon="CON_TRACKTO")
+
+            props = row.operator("object.tmg_add_constraint", text='', icon="CON_FLOOR")
+            props.con = "FLOOR"
             
-#            if len(cons) > 0:
-#                row = col.row(align=True)
-#                row.label(text="Constraints")
+            props = row.operator("object.tmg_add_constraint", text='', icon="CON_FOLLOWPATH")
+            props.con = "FOLLOW_PATH"
+            
+            props = row.operator("object.tmg_add_constraint", text='', icon="CON_TRACKTO")
+            props.con = "TRACK_TO"
+            
+            row = col.row(align=True)
+            
+            props = row.operator("object.tmg_remove_constraint", text='', icon="X")
+            props.con = "FLOOR"
+            
+            props = row.operator("object.tmg_remove_constraint", text='', icon="X")
+            props.con = "FOLLOW_PATH"
+            
+            props = row.operator("object.tmg_remove_constraint", text='', icon="X")
+            props.con = "TRACK_TO"
+            
+            if len(cons) > 0:
+                row = col.row(align=True)
+                row.label(text="Constraints")
                 
             for type, con in cons:
                 if con.type == "FLOOR":
                     row = col.row(align=True)
+#                    row.prop(con, 'mute', text='')
+#                    props = row.operator("object.tmg_remove_constraint", text='', icon="X")
+#                    props.con = "FLOOR"
                     row.label(text=con.name)
                 
                     row = col.row(align=True)
+                    row.prop(con, 'mute', text='')
                     row.prop(con, 'target', text='')
                     row.prop(con, 'offset', text='')
                 
                 if con.type == "FOLLOW_PATH":
                     row = col.row(align=True)
+#                    row.prop(con, 'mute', text='')
+#                    props = row.operator("object.tmg_remove_constraint", text='', icon="X")
+#                    props.con = "FOLLOW_PATH"
                     row.label(text=con.name)
                     
                     row = col.row(align=True)
+                    row.prop(con, 'mute', text='')
                     row.prop(con, 'target', text='')
                     
                     row = col.row(align=True)
@@ -350,9 +345,13 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
                     
                 if con.type == "TRACK_TO":
                     row = col.row(align=True)
+#                    row.prop(con, 'mute', text='')
+#                    props = row.operator("object.tmg_remove_constraint", text='', icon="X")
+#                    props.con = "TRACK_TO"
                     row.label(text=con.name)
                     
                     row = col.row(align=True)
+                    row.prop(con, 'mute', text='')
                     row.prop(con, 'target', text='')
                     row.prop(con, 'influence', text='')
             
@@ -421,6 +420,8 @@ classes = (
     OBJECT_PT_TMG_Camera_Panel,
     OBJECT_PT_TMG_Constraints_Panel,
     OBJECT_PT_TMG_Render_Panel,
+    OBJECT_OT_Add_Constraint,
+    OBJECT_OT_Remove_Constraint,
 )
 
 
