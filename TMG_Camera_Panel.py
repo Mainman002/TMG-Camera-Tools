@@ -250,11 +250,13 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
             row.prop(tmg_cam_vars.scene_camera.data, 'clip_end', text='')
 
             row = col.row(align=True)
-            row.label(text="Use DOF")
             row.prop(tmg_cam_vars.scene_camera.data.dof, 'use_dof', text='', icon="CON_OBJECTSOLVER")
+            row.label(text="Use DOF")
             
             if tmg_cam_vars.scene_camera.data.dof.use_dof:
-                row = col.box()
+#                box = col.box()
+                row = col.row(align=True)
+                
                 row.prop(tmg_cam_vars.scene_camera.data.dof, 'focus_object', text='')
                 row.prop(tmg_cam_vars.scene_camera.data.dof, 'aperture_fstop', text='')
             
@@ -311,25 +313,25 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
             for type, con in cons:
                 if con.type == "FLOOR":
                     row = col.row(align=True)
-#                    row.prop(con, 'mute', text='')
+                    row.prop(con, 'mute', text='')
 #                    props = row.operator("object.tmg_remove_constraint", text='', icon="X")
 #                    props.con = "FLOOR"
                     row.label(text=con.name)
                 
                     row = col.row(align=True)
-                    row.prop(con, 'mute', text='')
+#                    row.prop(con, 'mute', text='')
                     row.prop(con, 'target', text='')
                     row.prop(con, 'offset', text='')
                 
                 if con.type == "FOLLOW_PATH":
                     row = col.row(align=True)
-#                    row.prop(con, 'mute', text='')
+                    row.prop(con, 'mute', text='')
 #                    props = row.operator("object.tmg_remove_constraint", text='', icon="X")
 #                    props.con = "FOLLOW_PATH"
                     row.label(text=con.name)
                     
                     row = col.row(align=True)
-                    row.prop(con, 'mute', text='')
+#                    row.prop(con, 'mute', text='')
                     row.prop(con, 'target', text='')
                     
                     row = col.row(align=True)
@@ -345,13 +347,13 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
                     
                 if con.type == "TRACK_TO":
                     row = col.row(align=True)
-#                    row.prop(con, 'mute', text='')
+                    row.prop(con, 'mute', text='')
 #                    props = row.operator("object.tmg_remove_constraint", text='', icon="X")
 #                    props.con = "TRACK_TO"
                     row.label(text=con.name)
                     
                     row = col.row(align=True)
-                    row.prop(con, 'mute', text='')
+#                    row.prop(con, 'mute', text='')
                     row.prop(con, 'target', text='')
                     row.prop(con, 'influence', text='')
             
@@ -400,19 +402,22 @@ class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
             
             row = col.row(align=True)
             row.prop(scene.render, 'engine', text='')
-            row.prop(tmg_cam_vars, 'render_slot', text='Slot')
-            row.prop(scene, 'use_nodes', text='', icon="NODE_COMPOSITING")
-            
-            row = col.row(align=True)
-            row.operator("render.render", text='Image', icon="CAMERA_DATA")
-            row.operator("render.render", text='Animation', icon="RENDER_ANIMATION").animation=True
+            row.prop(scene.render, 'filepath', text='')
             
             row = col.row(align=True)
             row.prop(scene.render.image_settings, 'file_format', text='')
             row.prop(scene.render.image_settings, 'color_mode', text='')
             
             row = col.row(align=True)
-            row.prop(scene.render, 'filepath', text='')
+            row.prop(tmg_cam_vars, 'render_slot', text='Slot', icon="RENDERLAYERS")
+            row.prop(scene, 'use_nodes', icon="NODE_COMPOSITING")
+                        
+            row = col.row(align=True)
+            row.operator("render.render", text='Image', icon="CAMERA_DATA")
+            row.operator("render.render", text='Animation', icon="RENDER_ANIMATION").animation=True
+            
+#            row = col.row(align=True)
+#            row.prop(scene.render, 'filepath', text='')
         
 
 classes = (
