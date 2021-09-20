@@ -9,7 +9,7 @@ bl_info = {
     "author": "Johnathan Mueller",
     "descrtion": "A panel to set camera sensor values for rendering",
     "blender": (2, 80, 0),
-    "version": (0, 1, 6),
+    "version": (0, 1, 7),
     "location": "View3D (ObjectMode) > Sidebar > TMG_Camera Tab",
     "warning": "",
     "category": "Object"
@@ -304,12 +304,11 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
             row.label(text="Use DOF")
             
             if tmg_cam_vars.scene_camera.data.dof.use_dof:
-#                box = col.box()
                 row = col.row(align=True)
                 
                 row.prop(tmg_cam_vars.scene_camera.data.dof, 'focus_object', text='')
                 row.prop(tmg_cam_vars.scene_camera.data.dof, 'aperture_fstop', text='')
-            
+             
             
 class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
     bl_idname = 'OBJECT_PT_tmg_constraints_panel'
@@ -318,6 +317,18 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
     bl_context = "objectmode"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw(self, context):
+        layout = self.layout
+        
+                
+class OBJECT_PT_TMG_Constraints_Panel_Floor(bpy.types.Panel):
+    bl_idname = "SUB_PT_Gensett"
+    bl_label = "Floor"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
 
     def draw(self, context):
         scene = context.scene
@@ -330,52 +341,11 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
             camera = tmg_cam_vars.scene_camera
             cons = camera.constraints.items()
-            
-#            row = col.row(align=True)
-            row.label(text="Add Constraints")
-            
-            row = col.row(align=True)
-            
-            try:
-                cn = camera.constraints["Floor"]
-                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
-                props.con = "FLOOR"
-            except:
-                cn = None
-                props = row.operator("object.tmg_add_constraint", text='', icon="CON_FLOOR")
-                props.con = "FLOOR"
-                
-            try:
-                cn = camera.constraints["Follow Path"]
-                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
-                props.con = "FOLLOW_PATH"
-            except:
-                cn = None
-                props = row.operator("object.tmg_add_constraint", text='', icon="CON_FOLLOWPATH")
-                props.con = "FOLLOW_PATH"
-            
-            try:
-                cn = camera.constraints["Track To"]
-                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
-                props.con = "TRACK_TO"
-            except:
-                cn = None
-                props = row.operator("object.tmg_add_constraint", text='', icon="CON_TRACKTO")
-                props.con = "TRACK_TO"
-            
-            if len(cons) > 0:
-                row = col.row(align=True)
-                row.label(text="Constraints")
                 
             try:
                 cn = camera.constraints["Floor"]
-                row = col.row(align=True)
-#                row.prop(cn, 'mute', text='')
-#                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
-#                props.con = "FLOOR"
-                row.label(text=cn.name)
-                
                 row.prop(cn, 'mute', text='')
+                
                 props = row.operator("object.tmg_move_constraint", text='', icon="TRIA_UP")
                 props.con = "FLOOR"
                 props.dir = "UP"
@@ -383,23 +353,43 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
                 props = row.operator("object.tmg_move_constraint", text='', icon="TRIA_DOWN")
                 props.con = "FLOOR"
                 props.dir = "DOWN"
+                
+                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
+                props.con = "FLOOR"
                 
                 row = col.row(align=True)
                 row.prop(cn, 'target', text='')
                 row.prop(cn, 'offset', text='')
+                
             except:
                 cn = None
+                props = row.operator("object.tmg_add_constraint", text='', icon="CON_FLOOR")
+                props.con = "FLOOR"
+                             
+                             
+class OBJECT_PT_TMG_Constraints_Panel_Follow_Path(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_constraints_panel_follow_path"
+    bl_label = "Follow Path"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
+
+    def draw(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            camera = tmg_cam_vars.scene_camera
+            cons = camera.constraints.items()
                 
             try:
                 cn = camera.constraints["Follow Path"]
-                row = col.row(align=True)
-#                row.prop(cn, 'mute', text='')
-#                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
-#                props.con = "FOLLOW_PATH"
-                
-                row.label(text=cn.name)
-                
                 row.prop(cn, 'mute', text='')
+                
                 props = row.operator("object.tmg_move_constraint", text='', icon="TRIA_UP")
                 props.con = "FOLLOW_PATH"
                 props.dir = "UP"
@@ -407,6 +397,9 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
                 props = row.operator("object.tmg_move_constraint", text='', icon="TRIA_DOWN")
                 props.con = "FOLLOW_PATH"
                 props.dir = "DOWN"
+                
+                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
+                props.con = "FOLLOW_PATH"
                 
                 row = col.row(align=True)
                 row.prop(cn, 'target', text='')
@@ -423,16 +416,33 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
                 row.prop(cn, 'use_curve_follow', text='', icon="CON_FOLLOWPATH")
             except:
                 cn = None
+                props = row.operator("object.tmg_add_constraint", text='', icon="CON_FOLLOWPATH")
+                props.con = "FOLLOW_PATH"
+                
+                
+class OBJECT_PT_TMG_Constraints_Panel_Track_To(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_constraints_panel_track_to"
+    bl_label = "Track To"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
+
+    def draw(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            camera = tmg_cam_vars.scene_camera
+            cons = camera.constraints.items()
                 
             try:
                 cn = camera.constraints["Track To"]
-                row = col.row(align=True)
-#                row.prop(cn, 'mute', text='')
-#                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
-
-                row.label(text=cn.name)
-
                 row.prop(cn, 'mute', text='')
+                
                 props = row.operator("object.tmg_move_constraint", text='', icon="TRIA_UP")
                 props.con = "TRACK_TO"
                 props.dir = "UP"
@@ -440,12 +450,17 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
                 props = row.operator("object.tmg_move_constraint", text='', icon="TRIA_DOWN")
                 props.con = "TRACK_TO"
                 props.dir = "DOWN"
+                
+                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
+                props.con = "TRACK_TO"
 
                 row = col.row(align=True)
                 row.prop(cn, 'target', text='')
                 row.prop(cn, 'influence', text='')
             except:
-                cn = None
+                cn = None  
+                props = row.operator("object.tmg_add_constraint", text='', icon="CON_TRACKTO")
+                props.con = "TRACK_TO"
                 
             
 class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
@@ -506,15 +521,15 @@ class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
             row = col.row(align=True)
             row.operator("render.render", text='Image', icon="CAMERA_DATA")
             row.operator("render.render", text='Animation', icon="RENDER_ANIMATION").animation=True
-            
-#            row = col.row(align=True)
-#            row.prop(scene.render, 'filepath', text='')
         
 
 classes = (
     TMG_Camera_Properties,
     OBJECT_PT_TMG_Camera_Panel,
     OBJECT_PT_TMG_Constraints_Panel,
+    OBJECT_PT_TMG_Constraints_Panel_Floor,
+    OBJECT_PT_TMG_Constraints_Panel_Follow_Path,
+    OBJECT_PT_TMG_Constraints_Panel_Track_To,
     OBJECT_PT_TMG_Render_Panel,
     OBJECT_OT_Add_Constraint,
     OBJECT_OT_Remove_Constraint,
