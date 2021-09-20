@@ -100,6 +100,22 @@ def _change_scene_camera(self, context):
         context.space_data.lock_camera
 
 
+class OBJECT_OT_Select_Camera(bpy.types.Operator):
+    """Select scene camera"""
+    bl_idname = 'object.tmg_select_camera'
+    bl_label = 'Select Camera'
+    
+    def execute(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        camera = tmg_cam_vars.scene_camera
+        
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.context.view_layer.objects.active = camera
+        camera.select_set(True)  
+        return {'FINISHED'}
+
+
 def _set_cam_values(self, context):
     scene = context.scene
     tmg_cam_vars = scene.tmg_cam_vars
@@ -185,11 +201,14 @@ def _move_constraint(self, context, _con, _dir):
     tmg_cam_vars = scene.tmg_cam_vars
     camera = tmg_cam_vars.scene_camera
     
-    camera.select_set(state=True)
+    bpy.ops.object.select_all(action='DESELECT')
     bpy.context.view_layer.objects.active = camera
+    camera.select_set(True)   
     
     for name, con in camera.constraints.items():
         if con.type == _con:
+            mod = camera.constraints.get(con.name)
+            print(mod)
             if _dir == "UP":
                 bpy.ops.constraint.move_up(constraint=con.name, owner="OBJECT")
             else:
@@ -245,10 +264,12 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
         
         row.prop(tmg_cam_vars, 'scene_camera', text='')
         
-        if context.space_data.lock_camera:
+        if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
+            row.operator("object.tmg_select_camera", text='', icon="RESTRICT_SELECT_ON")
             row.prop(context.space_data, 'lock_camera', text='', icon="LOCKVIEW_ON")
         else:
-            row.prop(context.space_data, 'lock_camera', text='', icon="LOCKVIEW_OFF")
+            row.label(text='', icon="RESTRICT_SELECT_ON")
+            row.label(text='', icon="LOCKVIEW_OFF")
             
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
             row = col.row(align=True)
@@ -498,6 +519,7 @@ classes = (
     OBJECT_OT_Add_Constraint,
     OBJECT_OT_Remove_Constraint,
     OBJECT_OT_Move_Constraint,
+    OBJECT_OT_Select_Camera,
 )
 
 
