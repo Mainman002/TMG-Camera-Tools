@@ -185,12 +185,15 @@ def _move_constraint(self, context, _con, _dir):
     tmg_cam_vars = scene.tmg_cam_vars
     camera = tmg_cam_vars.scene_camera
     
+    camera.select_set(state=True)
+    bpy.context.view_layer.objects.active = camera
+    
     for name, con in camera.constraints.items():
         if con.type == _con:
             if _dir == "UP":
-                bpy.ops.constraint.move_up(constraint=con.name, owner='OBJECT')
+                bpy.ops.constraint.move_up(constraint=con.name, owner="OBJECT")
             else:
-                bpy.ops.constraint.move_down(constraint=con.name, owner='OBJECT')
+                bpy.ops.constraint.move_down(constraint=con.name, owner="OBJECT")
             
     
 class OBJECT_OT_Move_Constraint(bpy.types.Operator):
