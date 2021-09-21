@@ -298,17 +298,51 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
             row = col.row(align=True)
             row.prop(tmg_cam_vars.scene_camera.data, 'clip_start', text='')
             row.prop(tmg_cam_vars.scene_camera.data, 'clip_end', text='')
+                  
+             
+class OBJECT_PT_TMG_Camera_Panel_DOF(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_camera_panel_dof"
+    bl_label = "Depth of Field"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_camera_panel"
+#    bl_options = {'HIDE_HEADER'}
 
-            row = col.row(align=True)
-            row.prop(tmg_cam_vars.scene_camera.data.dof, 'use_dof', text='', icon="CON_OBJECTSOLVER")
-            row.label(text="Use DOF")
+    def draw_header(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            camera = tmg_cam_vars.scene_camera
+            cons = camera.constraints.items()
+            
+            if tmg_cam_vars.scene_camera.data.dof.use_dof:
+                row.prop(tmg_cam_vars.scene_camera.data.dof, 'use_dof', text='', icon="HIDE_OFF")
+            else:
+                row.prop(tmg_cam_vars.scene_camera.data.dof, 'use_dof', text='', icon="HIDE_ON")
+
+    def draw(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            camera = tmg_cam_vars.scene_camera
+            cons = camera.constraints.items()
             
             if tmg_cam_vars.scene_camera.data.dof.use_dof:
                 row = col.row(align=True)
                 
                 row.prop(tmg_cam_vars.scene_camera.data.dof, 'focus_object', text='')
                 row.prop(tmg_cam_vars.scene_camera.data.dof, 'aperture_fstop', text='')
-             
+                 
             
 class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
     bl_idname = 'OBJECT_PT_tmg_constraints_panel'
@@ -329,6 +363,8 @@ class OBJECT_PT_TMG_Constraints_Panel_Floor(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         scene = context.scene
@@ -373,6 +409,8 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         scene = context.scene
@@ -426,6 +464,8 @@ class OBJECT_PT_TMG_Constraints_Panel_Track_To(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         scene = context.scene
@@ -526,6 +566,7 @@ class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
 classes = (
     TMG_Camera_Properties,
     OBJECT_PT_TMG_Camera_Panel,
+    OBJECT_PT_TMG_Camera_Panel_DOF,
     OBJECT_PT_TMG_Constraints_Panel,
     OBJECT_PT_TMG_Constraints_Panel_Floor,
     OBJECT_PT_TMG_Constraints_Panel_Follow_Path,
