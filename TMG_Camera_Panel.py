@@ -9,7 +9,7 @@ bl_info = {
     "author": "Johnathan Mueller",
     "descrtion": "A panel to set camera sensor values for rendering",
     "blender": (2, 80, 0),
-    "version": (0, 1, 7),
+    "version": (0, 1, 8),
     "location": "View3D (ObjectMode) > Sidebar > TMG_Camera Tab",
     "warning": "",
     "category": "Object"
@@ -214,6 +214,40 @@ def _move_constraint(self, context, _con, _dir):
             else:
                 bpy.ops.constraint.move_down(constraint=con.name, owner="OBJECT")
             
+            
+def _curve_size(self, context):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    camera = tmg_cam_vars.scene_camera
+    
+    if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+        camera = tmg_cam_vars.scene_camera
+        cons = camera.constraints.items()
+            
+        try:
+            cn = camera.constraints["Follow Path"]
+            cn.target
+            
+            bpy.ops.object.select_all(action='DESELECT')
+            bpy.context.view_layer.objects.active = cn.target
+            cn.target.select_set(True) 
+            
+            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+            
+            cn.target.scale[0] = 1
+            cn.target.scale[1] = 1
+            cn.target.scale[2] = 1
+            
+            if tmg_cam_vars.curve_lock_scale:
+                cn.target.bound_box.data.dimensions = (tmg_cam_vars.curve_size_x, tmg_cam_vars.curve_size_x, tmg_cam_vars.curve_size_x)
+            else:
+                cn.target.bound_box.data.dimensions = (tmg_cam_vars.curve_size_x, tmg_cam_vars.curve_size_y, tmg_cam_vars.curve_size_z)
+            
+            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+            
+        except:
+            cn = None
+    
     
 class OBJECT_OT_Move_Constraint(bpy.types.Operator):
     """Remove all constraints of type"""
@@ -231,6 +265,11 @@ class OBJECT_OT_Move_Constraint(bpy.types.Operator):
 class TMG_Camera_Properties(bpy.types.PropertyGroup):
     scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, poll=_tmg_search_cameras, description='Scene active camera', update=_change_scene_camera)
     render_slot : bpy.props.IntProperty(default=1, min=1, max=8, update=_set_render_slot)
+    
+    curve_lock_scale : bpy.props.BoolProperty(default=False)
+    curve_size_x : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
+    curve_size_y : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
+    curve_size_z : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
     
     cam_sensor_format : bpy.props.EnumProperty(name='Camera Profile', default='0', description='Camera presets',
     items=[
@@ -458,6 +497,70 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path(bpy.types.Panel):
                 props.con = "FOLLOW_PATH"
                 
                 
+class OBJECT_PT_TMG_Constraints_Panel_Follow_Path_Spline_Scale(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_constraints_panel_follow_path_spline_scale"
+    bl_label = "Spline Scale"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_constraints_panel_follow_path"
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    def draw_header(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            camera = tmg_cam_vars.scene_camera
+            cons = camera.constraints.items()
+            
+            if tmg_cam_vars.curve_lock_scale:
+                row.prop(tmg_cam_vars, 'curve_lock_scale', text='', icon="LOCKED")
+            else:
+                row.prop(tmg_cam_vars, 'curve_lock_scale', text='', icon="UNLOCKED")
+
+    def draw(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            camera = tmg_cam_vars.scene_camera
+            cons = camera.constraints.items()
+                
+            try:
+                cn = camera.constraints["Follow Path"]
+                
+                if tmg_cam_vars.curve_lock_scale:
+                    row = col.row(align=True)
+                    row.label(text="X, Y, Z")
+                    row.prop(tmg_cam_vars, 'curve_size_x', text='')
+                else:
+                    row = col.row(align=True)
+                    row.label(text='X')
+                    row.prop(tmg_cam_vars, 'curve_size_x', text='')
+                    
+                    row = col.row(align=True)
+                    row.label(text='Y')
+                    row.prop(tmg_cam_vars, 'curve_size_y', text='')
+                    
+                    row = col.row(align=True)
+                    row.label(text='Z')
+                    row.prop(tmg_cam_vars, 'curve_size_z', text='')
+                    
+            except:
+                cn = None
+                props = row.operator("object.tmg_add_constraint", text='', icon="CON_FOLLOWPATH")
+                props.con = "FOLLOW_PATH"
+                
+                
 class OBJECT_PT_TMG_Constraints_Panel_Track_To(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_constraints_panel_track_to"
     bl_label = "Track To"
@@ -570,6 +673,7 @@ classes = (
     OBJECT_PT_TMG_Constraints_Panel,
     OBJECT_PT_TMG_Constraints_Panel_Floor,
     OBJECT_PT_TMG_Constraints_Panel_Follow_Path,
+    OBJECT_PT_TMG_Constraints_Panel_Follow_Path_Spline_Scale,
     OBJECT_PT_TMG_Constraints_Panel_Track_To,
     OBJECT_PT_TMG_Render_Panel,
     OBJECT_OT_Add_Constraint,
