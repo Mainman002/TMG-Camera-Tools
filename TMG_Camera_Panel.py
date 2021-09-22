@@ -180,6 +180,7 @@ def _change_scene_camera(self, context):
 
     if camera and camera.type == "CAMERA":
         scene.camera = camera
+        bpy.context.space_data.camera = camera
         
         try:
             if camera["resolution"]:
