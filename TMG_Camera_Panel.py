@@ -119,6 +119,11 @@ def _set_cam_res_values(self, context):
     print("Camera: ", camera.data.name)
     
     if camera:
+        res_x = 1920
+        res_y = 1080
+        tmp_res_x = 1920
+        tmp_res_y = 1080
+        
         try:
             res = camera["resolution"]
             mode = camera["res_mode"]
@@ -160,8 +165,8 @@ def _set_cam_res_values(self, context):
                 res_x = tmp_res_x
                 res_y = tmp_res_x
 
-        camera["res_x"] = res_x
-        camera["res_y"] = res_y
+        camera["res_x"] = int(res_x)
+        camera["res_y"] = int(res_y)
         
         scene.render.resolution_x = int(res_x)
         scene.render.resolution_y = int(res_y)
@@ -177,10 +182,14 @@ def _change_scene_camera(self, context):
         scene.camera = camera
         
         try:
-            tmg_cam_vars.cam_resolution_presets = camera["resolution"]
-            tmg_cam_vars.cam_resolution_mode_presets = camera["res_mode"]
-            scene.render.resolution_x = int(camera["res_x"])
-            scene.render.resolution_y = int(camera["res_y"])
+            if camera["resolution"]:
+                tmg_cam_vars.cam_resolution_presets = camera["resolution"]
+            if camera["res_mode"]:
+                tmg_cam_vars.cam_resolution_mode_presets = camera["res_mode"]
+            if camera["res_x"]:
+                scene.render.resolution_x = int(camera["res_x"])
+            if camera["res_y"]:
+                scene.render.resolution_y = int(camera["res_y"])
         except:
             camera["res_mode"] = 0
             camera["resolution"] = 2
@@ -504,6 +513,7 @@ class OBJECT_PT_TMG_Camera_Panel_DOF(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_camera_panel"
+    bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
