@@ -1,10 +1,16 @@
 import bpy, sys, os
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty, IntProperty, FloatProperty, FloatVectorProperty, PointerProperty
-from bpy.types import Operator
+from bpy.types import Operator, Header
 
-## Extra online resources used in this script
-## https://blender.stackexchange.com/questions/155515/how-do-a-create-a-foldout-ui-panel
+# GNU GENERAL PUBLIC LICENSE
+# Version 3, 29 June 2007
+
+# Extra online resources used in this script
+# https://blender.stackexchange.com/questions/155515/how-do-a-create-a-foldout-ui-panel
+
+# Thank you all that download, suggest, and request features
+# As well as the whole Blender community. You're all epic :)
 
 bl_info = {
     "name": "TMG_Camera_Tools",
@@ -46,35 +52,46 @@ def _change_ob(self, context, _ob):
 def _change_camera_presets(self, context):
     scene = context.scene
     tmg_cam_vars = scene.tmg_cam_vars
+    camera = tmg_cam_vars.scene_camera
+    
+    ## divide sensor by 1.293 to get focal length (sometimes good values)
     
     if tmg_cam_vars.cam_sensor_format == '0':
-        active_dict["focal_l"] = 24
-        active_dict["sensor_w"] = 36
-        active_dict["sensor_h"] = 36
-        active_dict["ortho_scale"] = 10
-        active_dict["fStop"] = 2.0
+        active_dict["focal_l"] = 18.56
+        active_dict["sensor_w"] = 50
+        active_dict["sensor_h"] = 50
+        active_dict["ortho_scale"] = 33.17
+#        active_dict["fStop"] = 2.0
         
     if tmg_cam_vars.cam_sensor_format == '1':
-        active_dict["focal_l"] = 50
-        active_dict["sensor_w"] = 36
-        active_dict["sensor_h"] = 36
-        active_dict["ortho_scale"] = 5
-        active_dict["fStop"] = 2.0
+        active_dict["focal_l"] = 27.84
+        active_dict["sensor_w"] = 50
+        active_dict["sensor_h"] = 50
+        active_dict["ortho_scale"] = 13.82
+#        active_dict["fStop"] = 2.0
         
     if tmg_cam_vars.cam_sensor_format == '2':
-        active_dict["focal_l"] = 80
-        active_dict["sensor_w"] = 36
-        active_dict["sensor_h"] = 36
-        active_dict["ortho_scale"] = 2.8
-        active_dict["fStop"] = 2.8
+        active_dict["focal_l"] = 38.66
+        active_dict["sensor_w"] = 50
+        active_dict["sensor_h"] = 50
+        active_dict["ortho_scale"] = 5.76
+#        active_dict["fStop"] = 2.0
         
     if tmg_cam_vars.cam_sensor_format == '3':
-        active_dict["focal_l"] = 210
-        active_dict["sensor_w"] = 36
-        active_dict["sensor_h"] = 36
+        active_dict["focal_l"] = 61.87
+        active_dict["sensor_w"] = 50
+        active_dict["sensor_h"] = 50
+        active_dict["ortho_scale"] = 2.4
+#        active_dict["fStop"] = 2.8
+        
+    if tmg_cam_vars.cam_sensor_format == '4':
+        active_dict["focal_l"] = 162.41
+        active_dict["sensor_w"] = 50
+        active_dict["sensor_h"] = 50
         active_dict["ortho_scale"] = 1
-        active_dict["fStop"] = 2.8
+#        active_dict["fStop"] = 2.8
     
+    active_dict["fStop"] = camera.data.dof.aperture_fstop
     _set_cam_values(self, context)
 
 
@@ -117,7 +134,6 @@ def _set_cam_res_values(self, context):
     tmg_cam_vars = scene.tmg_cam_vars
   
     camera = tmg_cam_vars.scene_camera
-#    print("Camera: ", camera.data.name)
     
     if camera:
         res_x = 1920
@@ -240,7 +256,6 @@ def _set_cam_values(self, context):
     tmg_cam_vars = scene.tmg_cam_vars
   
     camera = tmg_cam_vars.scene_camera
-#    print("Camera: ", camera.data.name)
     
     if camera:
         active_dict['type'] = camera.data.type
@@ -339,14 +354,6 @@ def _camera_passepartout_alpha(self, context):
     camera.data.show_passepartout = tmg_cam_vars.use_camera_passepartout_alpha
     
     
-#def _use_camera_passepartout_alpha(self, context):
-#    scene = context.scene
-#    tmg_cam_vars = scene.tmg_cam_vars
-#    camera = tmg_cam_vars.scene_camera
-#    
-#    cam.show_passepartout = tmg_cam_vars.use_camera_passepartout_alpha
-    
-    
 def _move_constraint(self, context, _con, _dir):
     scene = context.scene
     tmg_cam_vars = scene.tmg_cam_vars
@@ -438,7 +445,7 @@ class OBJECT_OT_Select_Camera(bpy.types.Operator):
         
         _change_ob(self, context, camera)
         return {'FINISHED'}
-
+    
 
 class TMG_Camera_Properties(bpy.types.PropertyGroup):
     scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, poll=_tmg_search_cameras, description='Scene active camera', update=_change_scene_camera)
@@ -464,9 +471,10 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     cam_sensor_format : bpy.props.EnumProperty(name='Sensor Profile', default='0', description='Camera presets',
     items=[
     ('0', '24mm', ''),
-    ('1', '50mm', ''),
-    ('2', '80mm', ''),
-    ('3', '210mm', '')], update=_change_camera_presets)
+    ('1', '36mm', ''),
+    ('2', '50mm', ''),
+    ('3', '80mm', ''),
+    ('4', '210mm', '')], update=_change_camera_presets)
     
     cam_type : bpy.props.EnumProperty(name='Perspective', default='PERSP', description='Camera perspective type',
     items=[
@@ -504,25 +512,24 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
     def draw(self, context):
         scene = context.scene
         tmg_cam_vars = scene.tmg_cam_vars
-        
+
         layout = self.layout
         layout.use_property_split = True
-        layout.use_property_decorate = False  # No animation.
-        col = layout.column(align=True)
-        row = col.row(align=True)
-        col.ui_units_y = 1.9
+        layout.use_property_decorate = False 
+        layout = layout.column()
+        row = layout.row(align=True)
+        layout.ui_units_y = 0.8
 
         row.prop(tmg_cam_vars, 'scene_camera', text='')
     
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
-            row = col.row(align=True)
             row.operator("object.tmg_select_camera", text='', icon="RESTRICT_SELECT_ON")
             row.operator('view3d.view_camera', text='', icon="CAMERA_DATA")
             row.operator('view3d.view_center_camera', text='', icon="SHADING_BBOX")
             row.prop(context.space_data, 'lock_camera', text='', icon="LOCKVIEW_ON")
         else:
-            col.ui_units_y = 1.7
-            col.label(text='Select a camera to begin')
+            layout.ui_units_y = 1.7
+            layout.label(text='Select a camera to begin')
         
 
 class OBJECT_PT_TMG_Camera_Panel_Name(bpy.types.Panel):
@@ -536,23 +543,24 @@ class OBJECT_PT_TMG_Camera_Panel_Name(bpy.types.Panel):
             
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
              
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False 
-            scene = context.scene
-            props = scene.eevee
+            layout = layout.column()
                 
-            col = layout.column()
-            col.prop(tmg_cam_vars, 'camera_name_lock')
+#            col = layout.column(heading="Include", align=True)
+#            sub = col.column()
+            layout.prop(tmg_cam_vars, 'camera_name_lock')
             
             if tmg_cam_vars.camera_name_lock:
-                col.prop(tmg_cam_vars, 'camera_name')
+                layout.prop(tmg_cam_vars, 'camera_name')
             else:
-                col.prop(tmg_cam_vars, 'camera_name')
-                col.prop(tmg_cam_vars, 'camera_data_name')
+                layout.prop(tmg_cam_vars, 'camera_name')
+                layout.prop(tmg_cam_vars, 'camera_data_name')
         
             
 class OBJECT_PT_TMG_Camera_Panel_Perspective(bpy.types.Panel):
@@ -566,41 +574,32 @@ class OBJECT_PT_TMG_Camera_Panel_Perspective(bpy.types.Panel):
             
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
              
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False 
-            scene = context.scene
-            props = scene.eevee
-                
-            col = layout.column()
+            layout = layout.column()
         
-            col.prop(tmg_cam_vars.scene_camera.data, 'type')
-            col.prop(tmg_cam_vars, 'cam_sensor_format')
+            layout.prop(tmg_cam_vars.scene_camera.data, 'type')
+            layout.prop(tmg_cam_vars, 'cam_sensor_format')
             
-            col.prop(tmg_cam_vars.scene_camera.data, 'sensor_fit')
-            col.label(text="Focal Length")
+            layout.prop(tmg_cam_vars.scene_camera.data, 'sensor_fit')
             
             if tmg_cam_vars.scene_camera.data.type != "ORTHO":
-                col = layout.row(align=True)
-                col.prop(tmg_cam_vars.scene_camera.data, 'lens', text='')
+                layout.prop(tmg_cam_vars.scene_camera.data, 'lens')
             else:
-                col = layout.row(align=True)
-                col.prop(tmg_cam_vars.scene_camera.data, 'ortho_scale', text='')
+                layout.prop(tmg_cam_vars.scene_camera.data, 'ortho_scale')
 
             if tmg_cam_vars.scene_camera.data.sensor_fit != "VERTICAL":
-                col.prop(tmg_cam_vars.scene_camera.data, 'sensor_width', text='')
+                layout.prop(tmg_cam_vars.scene_camera.data, 'sensor_width')
             else:
-                col.prop(tmg_cam_vars.scene_camera.data, 'sensor_height', text='')
+                layout.prop(tmg_cam_vars.scene_camera.data, 'sensor_height')
                 
-            row = layout.row(align=True)
-            row.label(text="Clip Area")
-            
-            row = layout.row(align=True)
-            row.prop(tmg_cam_vars.scene_camera.data, 'clip_start', text='')
-            row.prop(tmg_cam_vars.scene_camera.data, 'clip_end', text='')
+            layout.prop(tmg_cam_vars.scene_camera.data, 'clip_start')
+            layout.prop(tmg_cam_vars.scene_camera.data, 'clip_end')
                                    
             
 class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
@@ -613,10 +612,10 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
-        layout = self.layout
+        pass
                  
 class OBJECT_PT_TMG_Constraints_Panel_Floor(bpy.types.Panel):
-    bl_idname = "SUB_PT_Gensett"
+    bl_idname = "OBJECT_PT_TMG_constraints_panel_floor"
     bl_label = "Floor"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -625,27 +624,7 @@ class OBJECT_PT_TMG_Constraints_Panel_Floor(bpy.types.Panel):
 #    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
-        scene = context.scene
-        tmg_cam_vars = scene.tmg_cam_vars
-        
-        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
-            layout = self.layout
-            layout.use_property_split = True
-            layout.use_property_decorate = False  # No animation.
-            col = layout.column(align=True)
-            row = col.row(align=True)
-        
-            camera = tmg_cam_vars.scene_camera
-            cons = camera.constraints.items()
-            
-            try:
-                cn = camera.constraints["Floor"]
-                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
-                props.con = "FLOOR"
-            except:
-                cn = None
-                props = row.operator("object.tmg_add_constraint", text='', icon="ADD")
-                props.con = "FLOOR"
+        pass
 
     def draw(self, context):
         scene = context.scene
@@ -664,6 +643,7 @@ class OBJECT_PT_TMG_Constraints_Panel_Floor(bpy.types.Panel):
             try:
                 cn = camera.constraints["Floor"]
                 row.prop(cn, 'mute', text='')
+                layout.active= not cn.mute
                 
                 props = row.operator("object.tmg_move_constraint", text='', icon="TRIA_UP")
                 props.con = "FLOOR"
@@ -673,17 +653,37 @@ class OBJECT_PT_TMG_Constraints_Panel_Floor(bpy.types.Panel):
                 props.con = "FLOOR"
                 props.dir = "DOWN"
                 
-#                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
-#                props.con = "FLOOR"
+                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
+                props.con = "FLOOR"
                 
-                row = col.row(align=True)
-                row.prop(cn, 'target', text='')
-                row.prop(cn, 'offset', text='')
+#                row = col.row(align=True)
+                layout.prop(cn, 'target')
+                layout.prop(cn, 'offset')
                 
             except:
                 cn = None
 #                props = row.operator("object.tmg_add_constraint", text='', icon="CON_FLOOR")
 #                props.con = "FLOOR"
+
+                c1 = row.row(align=True)
+                c2 = row.row(align=True)
+
+                props = c1.operator("object.tmg_add_constraint", text='', icon="CON_TRACKTO")
+                props.con = "FLOOR"
+                c1.enabled = True
+                
+                c2.enabled = False
+                
+                props = c2.operator("object.tmg_move_constraint", text='', icon="TRIA_UP")
+                props.con = "FLOOR"
+                props.dir = "UP"
+                
+                props = c2.operator("object.tmg_move_constraint", text='', icon="TRIA_DOWN")
+                props.con = "FLOOR"
+                props.dir = "DOWN"
+                
+                props = c2.operator("object.tmg_remove_constraint", text='', icon="X")
+                props.con = "FLOOR"
                              
                              
 class OBJECT_PT_TMG_Constraints_Panel_Follow_Path(bpy.types.Panel):
@@ -696,39 +696,17 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path(bpy.types.Panel):
 #    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
-        scene = context.scene
-        tmg_cam_vars = scene.tmg_cam_vars
-        
-        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
-            layout = self.layout
-            layout.use_property_split = True
-            layout.use_property_decorate = False  # No animation.
-            col = layout.column(align=True)
-            row = col.row(align=True)
-        
-            camera = tmg_cam_vars.scene_camera
-            cons = camera.constraints.items()
-            
-            try:
-                cn = camera.constraints["Follow Path"]
-                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
-                props.con = "FOLLOW_PATH"
-            except:
-                cn = None
-                props = row.operator("object.tmg_add_constraint", text='', icon="ADD")
-                props.con = "FOLLOW_PATH"
+        pass
 
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False 
-            scene = context.scene
-            props = scene.eevee
-                
             layout = layout.column(align=True)
             row = layout.row(align=True)
         
@@ -738,6 +716,7 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path(bpy.types.Panel):
             try:
                 cn = camera.constraints["Follow Path"]
                 row.prop(cn, 'mute', text='')
+                layout.active= not cn.mute
                 
                 props = row.operator("object.tmg_move_constraint", text='', icon="TRIA_UP")
                 props.con = "FOLLOW_PATH"
@@ -746,39 +725,41 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path(bpy.types.Panel):
                 props = row.operator("object.tmg_move_constraint", text='', icon="TRIA_DOWN")
                 props.con = "FOLLOW_PATH"
                 props.dir = "DOWN"
+                
+                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
+                props.con = "FOLLOW_PATH"
 
-#                row = col.row(align=True)
                 layout.prop(cn, 'target', text='')
                 
                 if cn.use_fixed_location:
-#                    row = col.row(align=True)
                     layout.prop(cn, 'offset_factor')
                 else:
-#                    row = col.row(align=True)
                     layout.prop(cn, 'offset')
                     
-#                col_c = layout.column(align=True)
-#                row_c = col_c.row(align=True)
-#                col = row_c.column(align=True)
-#                col2 = row_c.column(align=True)
-#                col.alignment='RIGHT'
-#                col2.alignment='LEFT'
-                
-#                col.label(text='Fixed Location')
-#                col2.prop(cn, 'use_fixed_location', text='', icon="CON_LOCLIMIT")
                 layout.prop(cn, 'use_fixed_location')
-            
-#                col.label(text='Curve Radius')
-#                col2.prop(cn, 'use_curve_radius', text='', icon="CURVE_BEZCIRCLE")
                 layout.prop(cn, 'use_curve_radius')
-                
-#                layout.label(text='Follow Curve')
-#                layout.prop(cn, 'use_curve_follow', text='', icon="CON_FOLLOWPATH")
                 layout.prop(cn, 'use_curve_follow')
             except:
                 cn = None
-#                props = row.operator("object.tmg_add_constraint", text='', icon="CON_FOLLOWPATH")
-#                props.con = "FOLLOW_PATH"
+                c1 = row.row(align=True)
+                c2 = row.row(align=True)
+
+                props = c1.operator("object.tmg_add_constraint", text='', icon="CON_FOLLOWPATH")
+                props.con = "FOLLOW_PATH"
+                c1.enabled = True
+                
+                c2.enabled = False
+                
+                props = c2.operator("object.tmg_move_constraint", text='', icon="TRIA_UP")
+                props.con = "FOLLOW_PATH"
+                props.dir = "UP"
+                
+                props = c2.operator("object.tmg_move_constraint", text='', icon="TRIA_DOWN")
+                props.con = "FOLLOW_PATH"
+                props.dir = "DOWN"
+                
+                props = c2.operator("object.tmg_remove_constraint", text='', icon="X")
+                props.con = "FOLLOW_PATH"
                 
                 
 class OBJECT_PT_TMG_Constraints_Panel_Follow_Path_Spline_Scale(bpy.types.Panel):
@@ -799,19 +780,21 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path_Spline_Scale(bpy.types.Panel):
 
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False 
-            scene = context.scene
-            props = scene.eevee
         
             camera = tmg_cam_vars.scene_camera
             cons = camera.constraints.items()
                 
             try:
+                cn = camera.constraints["Follow Path"]
+                layout.active= not cn.mute
+                
                 cn = camera.constraints["Follow Path"]
                 col = layout.column(align=True)
                 
@@ -840,27 +823,7 @@ class OBJECT_PT_TMG_Constraints_Panel_Track_To(bpy.types.Panel):
 #    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
-        scene = context.scene
-        tmg_cam_vars = scene.tmg_cam_vars
-        
-        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
-            layout = self.layout
-            layout.use_property_split = True
-            layout.use_property_decorate = False  # No animation.
-            col = layout.column(align=True)
-            row = col.row(align=True)
-        
-            camera = tmg_cam_vars.scene_camera
-            cons = camera.constraints.items()
-            
-            try:
-                cn = camera.constraints["Track To"]
-                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
-                props.con = "TRACK_TO"
-            except:
-                cn = None
-                props = row.operator("object.tmg_add_constraint", text='', icon="ADD")
-                props.con = "TRACK_TO"
+        pass
 
     def draw(self, context):
         scene = context.scene
@@ -870,8 +833,8 @@ class OBJECT_PT_TMG_Constraints_Panel_Track_To(bpy.types.Panel):
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False  # No animation.
-            col = layout.column(align=True)
-            row = col.row(align=True)
+            layout = layout.column()
+            row = layout.row(align=True)
         
             camera = tmg_cam_vars.scene_camera
             cons = camera.constraints.items()
@@ -879,6 +842,7 @@ class OBJECT_PT_TMG_Constraints_Panel_Track_To(bpy.types.Panel):
             try:
                 cn = camera.constraints["Track To"]
                 row.prop(cn, 'mute', text='')
+                layout.active= not cn.mute
                 
                 props = row.operator("object.tmg_move_constraint", text='', icon="TRIA_UP")
                 props.con = "TRACK_TO"
@@ -888,16 +852,33 @@ class OBJECT_PT_TMG_Constraints_Panel_Track_To(bpy.types.Panel):
                 props.con = "TRACK_TO"
                 props.dir = "DOWN"
                 
-#                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
-#                props.con = "TRACK_TO"
+                props = row.operator("object.tmg_remove_constraint", text='', icon="X")
+                props.con = "TRACK_TO"
 
-                row = col.row(align=True)
-                row.prop(cn, 'target', text='')
-                row.prop(cn, 'influence', text='')
+#                row = layout.row(align=True)
+                layout.prop(cn, 'target')
+                layout.prop(cn, 'influence')
             except:
                 cn = None  
-#                props = row.operator("object.tmg_add_constraint", text='', icon="CON_TRACKTO")
-#                props.con = "TRACK_TO"
+                c1 = row.row(align=True)
+                c2 = row.row(align=True)
+
+                props = c1.operator("object.tmg_add_constraint", text='', icon="CON_TRACKTO")
+                props.con = "TRACK_TO"
+                c1.enabled = True
+                
+                c2.enabled = False
+                
+                props = c2.operator("object.tmg_move_constraint", text='', icon="TRIA_UP")
+                props.con = "TRACK_TO"
+                props.dir = "UP"
+                
+                props = c2.operator("object.tmg_move_constraint", text='', icon="TRIA_DOWN")
+                props.con = "TRACK_TO"
+                props.dir = "DOWN"
+                
+                props = c2.operator("object.tmg_remove_constraint", text='', icon="X")
+                props.con = "TRACK_TO"
                 
             
 class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
@@ -910,11 +891,7 @@ class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
-        scene = context.scene
-        tmg_cam_vars = scene.tmg_cam_vars
-        
-        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
-            layout = self.layout
+        pass
 
 
 class OBJECT_PT_TMG_Render_Panel_Aspect(bpy.types.Panel):
@@ -934,8 +911,7 @@ class OBJECT_PT_TMG_Render_Panel_Aspect(bpy.types.Panel):
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False  # No animation.
-            col = layout.column(align=True)
-            row = col.row(align=True)
+            layout = layout.column()
 
             layout.prop(tmg_cam_vars, 'cam_resolution_mode_presets', text='Preset')
             layout.prop(scene.render, 'pixel_aspect_x', text='X')
@@ -953,29 +929,28 @@ class OBJECT_PT_TMG_Render_Panel_Render(bpy.types.Panel):
 
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
             layout = self.layout
             layout.use_property_split = True
-            layout.use_property_decorate = False 
-            scene = context.scene
-            props = scene.eevee
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()
             
-            col = layout.column()
-            col.prop(scene.render, 'filepath')
-            col.prop(scene.render, 'engine')
+            layout.prop(scene.render, 'filepath')
+            layout.prop(scene.render, 'engine')
             
-            col.prop(scene.render.image_settings, 'file_format')
-            col.prop(scene.render.image_settings, 'color_mode')
+            layout.prop(scene.render.image_settings, 'file_format')
+            layout.prop(scene.render.image_settings, 'color_mode')
             
-            col.use_property_split = False
+            layout.use_property_split = False
     
-            row = col.row(align=True)
+            row = layout.row(align=True)
             row.prop(tmg_cam_vars, 'render_slot', text='Slot')
             row.operator("render.render", text='Image', icon="CAMERA_DATA")
                             
-            row = col.row(align=True)
+            row = layout.row(align=True)
             row.prop(scene, 'use_nodes', icon="NODE_COMPOSITING")
             row.operator("render.render", text='Animation', icon="RENDER_ANIMATION").animation=True
              
@@ -991,22 +966,22 @@ class OBJECT_PT_TMG_Render_Panel_Resolution(bpy.types.Panel):
 
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
             layout = self.layout
             layout.use_property_split = True
-            layout.use_property_decorate = False 
-            scene = context.scene
-            props = scene.eevee
-                
-            row = layout.row(align=True)
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()
             
             if tmg_cam_vars.res_lock:
+                row = layout.row(align=True)
                 row.prop(tmg_cam_vars, 'res_lock', text='', icon="LOCKED")
                 row.prop(tmg_cam_vars, 'res_x', text='')
                 row.prop(tmg_cam_vars, 'res_y', text='')
             else:
+                row = layout.row(align=True)
                 row.prop(tmg_cam_vars, 'res_lock', text='', icon="UNLOCKED")
                 row.prop(scene.render, 'resolution_x', text='')
                 row.prop(scene.render, 'resolution_y', text='')
@@ -1028,29 +1003,20 @@ class OBJECT_PT_TMG_Render_Panel_Sampling(bpy.types.Panel):
 
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
-        
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False  # No animation.
-        col = layout.column(align=True)
     
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
             camera = tmg_cam_vars.scene_camera
-
+            
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False  # No animation.
+            layout = layout.column()
 
-            scene = context.scene
-            props = scene.eevee
-
-            col = layout.column(align=True)
-            col.prop(props, "taa_render_samples", text="Render")
-            col.prop(props, "taa_samples", text="Viewport")
-
-            col = layout.column()
-            col.prop(props, "use_taa_reprojection")
+            layout.prop(props, "taa_render_samples", text="Render")
+            layout.prop(props, "taa_samples", text="Viewport")
+            layout.prop(props, "use_taa_reprojection")
           
           
 class OBJECT_PT_TMG_Render_Panel_Timeline(bpy.types.Panel):
@@ -1072,9 +1038,9 @@ class OBJECT_PT_TMG_Render_Panel_Timeline(bpy.types.Panel):
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False  # No animation.
-            col = layout.column(align=True)
-            row = col.row(align=True)
+            layout = layout.column()
 
+            row = layout.row(align=True)
             row.prop(scene, 'use_preview_range', text='')
             row.prop(scene, 'frame_start', text='')
             row.prop(scene, 'frame_end', text='')
@@ -1119,7 +1085,8 @@ class OBJECT_PT_TMG_Scene_Effects_Panel(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
-        layout = self.layout
+        pass
+    
         
 class OBJECT_PT_TMG_Scene_Effects_Panel_AO(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_effects_panel_ao"
@@ -1140,29 +1107,23 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_AO(bpy.types.Panel):
 
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
-        
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False  # No animation.
-        col = layout.column(align=True)
     
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
             camera = tmg_cam_vars.scene_camera
 
             layout = self.layout
             layout.use_property_split = True
-            layout.use_property_decorate = False
-            scene = context.scene
-            props = scene.eevee
-
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()
             layout.active = props.use_gtao
-            col = layout.column()
-            col.prop(props, "gtao_distance")
-            col.prop(props, "gtao_factor")
-            col.prop(props, "gtao_quality")
-            col.prop(props, "use_gtao_bent_normals")
-            col.prop(props, "use_gtao_bounce")
+            
+            layout.prop(props, "gtao_distance")
+            layout.prop(props, "gtao_factor")
+            layout.prop(props, "gtao_quality")
+            layout.prop(props, "use_gtao_bent_normals")
+            layout.prop(props, "use_gtao_bounce")
                
             
 class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
@@ -1184,30 +1145,24 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
 
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
-        
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False  # No animation.
-        col = layout.column(align=True)
     
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
             camera = tmg_cam_vars.scene_camera
 
             layout = self.layout
             layout.use_property_split = True
-
-            scene = context.scene
-            props = scene.eevee
-
+            layout.use_property_decorate = False  # No animation.
             layout.active = props.use_bloom
-            col = layout.column()
-            col.prop(props, "bloom_threshold")
-            col.prop(props, "bloom_knee")
-            col.prop(props, "bloom_radius")
-            col.prop(props, "bloom_color")
-            col.prop(props, "bloom_intensity")
-            col.prop(props, "bloom_clamp")
+            
+            layout = layout.column()
+            layout.prop(props, "bloom_threshold")
+            layout.prop(props, "bloom_knee")
+            layout.prop(props, "bloom_radius")
+            layout.prop(props, "bloom_color")
+            layout.prop(props, "bloom_intensity")
+            layout.prop(props, "bloom_clamp")
 
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field(bpy.types.Panel):
@@ -1228,19 +1183,21 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field(bpy.types.Panel):
 
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
     
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
-            props = scene.eevee
             camera = tmg_cam_vars.scene_camera
             dof = camera.data.dof
             
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False
-            col = layout.column()
+            layout = layout.column()
+            layout.ui_units_y = 0.7
+            layout.active = camera.data.dof.use_dof
             
-            col.prop(dof, 'focus_object')
+            layout.prop(dof, 'focus_object')
 
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Aperture(bpy.types.Panel):
@@ -1254,22 +1211,23 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Aperture(bpy.types.Panel)
 
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
     
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
-            props = scene.eevee
             camera = tmg_cam_vars.scene_camera
             dof = camera.data.dof
             
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False
-            col = layout.column()
+            layout = layout.column()
+            layout.active = camera.data.dof.use_dof
             
-            col.prop(dof, 'aperture_fstop')
-            col.prop(dof, "aperture_blades")
-            col.prop(dof, "aperture_rotation")
-            col.prop(dof, "aperture_ratio")
+            layout.prop(dof, 'aperture_fstop')
+            layout.prop(dof, "aperture_blades")
+            layout.prop(dof, "aperture_rotation")
+            layout.prop(dof, "aperture_ratio")
 
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Bokeh(bpy.types.Panel):
@@ -1283,28 +1241,29 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Bokeh(bpy.types.Panel):
 
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
     
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
-            props = scene.eevee
             camera = tmg_cam_vars.scene_camera
             dof = camera.data.dof
             
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False
-            col = layout.column()
+            layout = layout.column()
+            layout.active = camera.data.dof.use_dof
             
-            col.prop(props, "bokeh_max_size")
-            col.prop(props, "bokeh_threshold")
-            col.prop(props, "bokeh_neighbor_max")
-            col.prop(props, "bokeh_denoise_fac")
-            col.prop(props, "use_bokeh_high_quality_slight_defocus")
-            col.prop(props, "use_bokeh_jittered")
+            layout.prop(props, "bokeh_max_size")
+            layout.prop(props, "bokeh_threshold")
+            layout.prop(props, "bokeh_neighbor_max")
+            layout.prop(props, "bokeh_denoise_fac")
+            layout.prop(props, "use_bokeh_high_quality_slight_defocus")
+            layout.prop(props, "use_bokeh_jittered")
 
-            col = layout.column()
-            col.active = props.use_bokeh_jittered
-            col.prop(props, "bokeh_overblur")
+            layout = layout.column()
+            layout.active = props.use_bokeh_jittered
+            layout.prop(props, "bokeh_overblur")
 
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Motion_Blur(bpy.types.Panel):
@@ -1326,27 +1285,25 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Motion_Blur(bpy.types.Panel):
 
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
     
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
-            props = scene.eevee
             camera = tmg_cam_vars.scene_camera
             dof = camera.data.dof
 
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False
-            scene = context.scene
-            props = scene.eevee
+            layout = layout.column(align=False)
 
             layout.active = props.use_motion_blur
-            col = layout.column()
-            col.prop(props, "motion_blur_position", text="Position")
-            col.prop(props, "motion_blur_shutter")
-            col.separator()
-            col.prop(props, "motion_blur_depth_scale")
-            col.prop(props, "motion_blur_max")
-            col.prop(props, "motion_blur_steps", text="Steps")
+            layout.prop(props, "motion_blur_position", text="Position")
+            layout.prop(props, "motion_blur_shutter")
+            layout.separator()
+            layout.prop(props, "motion_blur_depth_scale")
+            layout.prop(props, "motion_blur_max")
+            layout.prop(props, "motion_blur_steps", text="Steps")
 
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Screen_Space_Reflections(bpy.types.Panel):
@@ -1368,29 +1325,28 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Screen_Space_Reflections(bpy.types.Panel
 
     def draw(self, context):
         scene = context.scene
+        props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
     
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
-            props = scene.eevee
             camera = tmg_cam_vars.scene_camera
             dof = camera.data.dof
 
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False
+            layout = layout.column(align=True)
 
-            scene = context.scene
-            props = scene.eevee
-
-            col = layout.column()
-            col.active = props.use_ssr
-            col.prop(props, "use_ssr_refraction", text="Refraction")
-            col.prop(props, "use_ssr_halfres")
-            col.prop(props, "ssr_quality")
-            col.prop(props, "ssr_max_roughness")
-            col.prop(props, "ssr_thickness")
-            col.prop(props, "ssr_border_fade")
-            col.prop(props, "ssr_firefly_fac")      
+            layout.active = props.use_ssr
+            layout.prop(props, "use_ssr_refraction", text="Refraction")
+            layout.prop(props, "use_ssr_halfres")
+            
+            layout = layout.column(align=False)
+            layout.prop(props, "ssr_quality")
+            layout.prop(props, "ssr_max_roughness")
+            layout.prop(props, "ssr_thickness")
+            layout.prop(props, "ssr_border_fade")
+            layout.prop(props, "ssr_firefly_fac")      
             
 
 class OBJECT_PT_TMG_Viewport_Panel(bpy.types.Panel):
@@ -1403,7 +1359,8 @@ class OBJECT_PT_TMG_Viewport_Panel(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
-        layout = self.layout
+        pass
+
 
 class OBJECT_PT_TMG_Viewport_Panel_Composition(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_viewport_panel_composition"
@@ -1422,7 +1379,8 @@ class OBJECT_PT_TMG_Viewport_Panel_Composition(bpy.types.Panel):
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False  # No animation.
-            col = layout.column(align=True)
+            layout = layout.column(align=True)
+            layout.active = context.space_data.overlay.show_overlays
         
             camera = tmg_cam_vars.scene_camera
             
@@ -1459,30 +1417,28 @@ class OBJECT_PT_TMG_Viewport_Panel_Display(bpy.types.Panel):
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False  # No animation.
-            col = layout.column(align=True)
-            row = col.row(align=True)
+            c1 = layout.column(align=True)
+            c2 = layout.column(align=True)
+            c1.active = context.space_data.overlay.show_overlays
             
             camera = tmg_cam_vars.scene_camera
             
-            col.prop(camera.data, "display_size", text="Size")
+            c1.prop(camera.data, "display_size", text="Size")
 
-            col = layout.column(heading="Show")
-            col.prop(camera.data, "show_limits", text="Limits")
-            col.prop(camera.data, "show_mist", text="Mist")
-            col.prop(camera.data, "show_sensor", text="Sensor")
-            col.prop(camera.data, "show_name", text="Name")
+            c1 = c1.column(heading="Show")
+            c1.prop(camera.data, "show_limits", text="Limits")
+            c1.prop(camera.data, "show_mist", text="Mist")
+            c1.prop(camera.data, "show_sensor", text="Sensor")
+            c1.prop(camera.data, "show_name", text="Name")
 
-            col = layout.column(align=False, heading="Passepartout")
-            col.use_property_decorate = False
-            row = col.row(align=True)
+            c2 = layout.column(align=False, heading="Passepartout")
+            c2.use_property_decorate = False
+            row = c2.row(align=True)
             sub = row.row(align=True)
-#            sub.prop(camera.data, "show_passepartout", text="")
             sub.prop(tmg_cam_vars, "use_camera_passepartout_alpha", text="")
             sub = sub.row(align=True)
             sub.active = camera.data.show_passepartout
             sub.prop(tmg_cam_vars, "camera_passepartout_alpha", text="")
-#            sub.prop(camera.data, "passepartout_alpha", text="")
-#            row.prop_decorator(camera.data, "passepartout_alpha")
         
 
 classes = (
