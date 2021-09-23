@@ -17,7 +17,7 @@ bl_info = {
     "author": "Johnathan Mueller",
     "descrtion": "A panel to set camera sensor values for rendering",
     "blender": (2, 80, 0),
-    "version": (0, 2, 0),
+    "version": (0, 2, 1),
     "location": "View3D (ObjectMode) > Sidebar > TMG_Camera Tab",
     "warning": "",
     "category": "Object"
@@ -616,7 +616,7 @@ class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
                  
 class OBJECT_PT_TMG_Constraints_Panel_Floor(bpy.types.Panel):
     bl_idname = "OBJECT_PT_TMG_constraints_panel_floor"
-    bl_label = "Floor"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
@@ -624,7 +624,28 @@ class OBJECT_PT_TMG_Constraints_Panel_Floor(bpy.types.Panel):
 #    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
-        pass
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            
+            camera = tmg_cam_vars.scene_camera
+            cons = camera.constraints.items()
+            
+            try:
+                cn = camera.constraints["Floor"]
+                layout.label(text='Floor')
+                layout.active = layout.active= not cn.mute
+            except:
+                cn = None
+                
+                layout.label(text='Floor')
+                layout.active = layout.active= False
+        else:
+            layout = self.layout
+            layout.label(text='Floor')
+            layout.active = layout.active= False
 
     def draw(self, context):
         scene = context.scene
@@ -688,7 +709,7 @@ class OBJECT_PT_TMG_Constraints_Panel_Floor(bpy.types.Panel):
                              
 class OBJECT_PT_TMG_Constraints_Panel_Follow_Path(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_constraints_panel_follow_path"
-    bl_label = "Follow Path"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
@@ -696,7 +717,29 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path(bpy.types.Panel):
 #    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
-        pass
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            
+            camera = tmg_cam_vars.scene_camera
+            cons = camera.constraints.items()
+            
+            try:
+                cn = camera.constraints["Follow Path"]
+                layout.label(text='Follow Path')
+                layout.active = layout.active= not cn.mute
+            except:
+                cn = None
+                
+                layout.label(text='Follow Path')
+                layout.active = layout.active= False
+                
+        else:
+            layout = self.layout
+            layout.label(text='Follow Path')
+            layout.active = layout.active= False
 
     def draw(self, context):
         scene = context.scene
@@ -764,7 +807,7 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path(bpy.types.Panel):
                 
 class OBJECT_PT_TMG_Constraints_Panel_Follow_Path_Spline_Scale(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_constraints_panel_follow_path_spline_scale"
-    bl_label = "Spline Scale"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_constraints_panel_follow_path"
@@ -777,6 +820,24 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path_Spline_Scale(bpy.types.Panel):
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
             layout = self.layout
+            
+            camera = tmg_cam_vars.scene_camera
+            cons = camera.constraints.items()
+            
+            try:
+                cn = camera.constraints["Follow Path"]
+                layout.label(text='Spline Scale')
+                layout.active = layout.active= not cn.mute
+            except:
+                cn = None
+                
+                layout.label(text='Spline Scale')
+                layout.active = layout.active= False
+        
+        else:
+            layout = self.layout
+            layout.label(text='Spline Scale')
+            layout.active = layout.active= False
 
     def draw(self, context):
         scene = context.scene
@@ -795,27 +856,46 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path_Spline_Scale(bpy.types.Panel):
                 cn = camera.constraints["Follow Path"]
                 layout.active= not cn.mute
                 
-                cn = camera.constraints["Follow Path"]
-                col = layout.column(align=True)
-                
-                if tmg_cam_vars.curve_lock_scale:
-                    col.prop(tmg_cam_vars, 'curve_lock_scale', text='Lock Scale')
+                if not cn.mute:
+                    cn = camera.constraints["Follow Path"]
+                    col = layout.column(align=True)
+                    col.enabled = True
+                    
+                    if tmg_cam_vars.curve_lock_scale:
+                        col.prop(tmg_cam_vars, 'curve_lock_scale', text='Lock Scale')
+                    else:
+                        col.prop(tmg_cam_vars, 'curve_lock_scale', text='Lock Scale')
+                    
+                    if tmg_cam_vars.curve_lock_scale:
+                        col.prop(tmg_cam_vars, 'curve_size_x', text='XYZ')
+                    else:
+                        col.prop(tmg_cam_vars, 'curve_size_x', text='X')
+                        col.prop(tmg_cam_vars, 'curve_size_y', text='Y')
+                        col.prop(tmg_cam_vars, 'curve_size_z', text='Z')
                 else:
-                    col.prop(tmg_cam_vars, 'curve_lock_scale', text='Lock Scale')
-                
-                if tmg_cam_vars.curve_lock_scale:
-                    col.prop(tmg_cam_vars, 'curve_size_x', text='XYZ')
-                else:
-                    col.prop(tmg_cam_vars, 'curve_size_x', text='X')
-                    col.prop(tmg_cam_vars, 'curve_size_y', text='Y')
-                    col.prop(tmg_cam_vars, 'curve_size_z', text='Z')
+                    cn = camera.constraints["Follow Path"]
+                    col = layout.column(align=True)
+                    col.enabled = False
+                    
+                    if tmg_cam_vars.curve_lock_scale:
+                        col.prop(tmg_cam_vars, 'curve_lock_scale', text='Lock Scale')
+                    else:
+                        col.prop(tmg_cam_vars, 'curve_lock_scale', text='Lock Scale')
+                    
+                    if tmg_cam_vars.curve_lock_scale:
+                        col.prop(tmg_cam_vars, 'curve_size_x', text='XYZ')
+                    else:
+                        col.prop(tmg_cam_vars, 'curve_size_x', text='X')
+                        col.prop(tmg_cam_vars, 'curve_size_y', text='Y')
+                        col.prop(tmg_cam_vars, 'curve_size_z', text='Z')
+                        
             except:
                 cn = None
                 
                 
 class OBJECT_PT_TMG_Constraints_Panel_Track_To(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_constraints_panel_track_to"
-    bl_label = "Track To"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
@@ -823,7 +903,29 @@ class OBJECT_PT_TMG_Constraints_Panel_Track_To(bpy.types.Panel):
 #    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
-        pass
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            
+            camera = tmg_cam_vars.scene_camera
+            cons = camera.constraints.items()
+            
+            try:
+                cn = camera.constraints["Track To"]
+                layout.label(text='Track To')
+                layout.active = layout.active= not cn.mute
+            except:
+                cn = None
+                
+                layout.label(text='Track To')
+                layout.active = layout.active= False
+                
+        else:
+            layout = self.layout
+            layout.label(text='Track To')
+            layout.active = layout.active= False
 
     def draw(self, context):
         scene = context.scene
@@ -918,6 +1020,40 @@ class OBJECT_PT_TMG_Render_Panel_Aspect(bpy.types.Panel):
             layout.prop(scene.render, 'pixel_aspect_y', text='Y')
          
          
+class OBJECT_PT_TMG_Render_Panel_Film(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_render_panel_film"
+    bl_label = "Film"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_render_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    def draw(self, context):
+        scene = context.scene
+        rd = scene.render
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()
+
+            col = layout.column()
+            col.prop(rd, "filter_size")
+            col.prop(rd, "film_transparent", text="Transparent")
+
+            col = layout.column(align=False, heading="Overscan")
+            row = col.row(align=True)
+            sub = row.row(align=True)
+            sub.prop(props, "use_overscan", text="")
+            sub = sub.row(align=True)
+            sub.active = props.use_overscan
+            sub.prop(props, "overscan_size", text="")
+         
+    
 class OBJECT_PT_TMG_Render_Panel_Render(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_render_panel_render"
     bl_label = "Render"
@@ -990,8 +1126,8 @@ class OBJECT_PT_TMG_Render_Panel_Resolution(bpy.types.Panel):
 #            layout.prop(tmg_cam_vars, 'cam_resolution_mode_presets')
             
             layout.prop(scene.render, 'resolution_percentage')
-
-
+            
+            
 class OBJECT_PT_TMG_Render_Panel_Sampling(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_render_panel_sampling"
     bl_label = "Sampling"
@@ -1017,7 +1153,7 @@ class OBJECT_PT_TMG_Render_Panel_Sampling(bpy.types.Panel):
             layout.prop(props, "taa_render_samples", text="Render")
             layout.prop(props, "taa_samples", text="Viewport")
             layout.prop(props, "use_taa_reprojection")
-          
+            
           
 class OBJECT_PT_TMG_Render_Panel_Timeline(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_render_panel_timeline"
@@ -1073,7 +1209,7 @@ class OBJECT_PT_TMG_Render_Panel_Timeline(bpy.types.Panel):
 #            else:
 #                row.scale_x = 0.95
 #                row.prop(scene, "frame_current", text="")
-
+     
           
 class OBJECT_PT_TMG_Scene_Effects_Panel(bpy.types.Panel):
     bl_idname = 'OBJECT_PT_tmg_scene_effects_panel'
@@ -1090,7 +1226,7 @@ class OBJECT_PT_TMG_Scene_Effects_Panel(bpy.types.Panel):
         
 class OBJECT_PT_TMG_Scene_Effects_Panel_AO(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_effects_panel_ao"
-    bl_label = "Ambient Occlusion"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
@@ -1103,7 +1239,13 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_AO(bpy.types.Panel):
         props = scene.eevee
         
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
-            self.layout.prop(props, "use_gtao", text="")
+            self.layout.prop(props, "use_gtao")
+            self.layout.active = props.use_gtao
+        
+        else:
+            layout = self.layout
+            layout.label(text='Ambient Occlusion')
+            layout.active = layout.active= False
 
     def draw(self, context):
         scene = context.scene
@@ -1128,7 +1270,7 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_AO(bpy.types.Panel):
             
 class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_effects_panel_bloom"
-    bl_label = "Bloom"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
@@ -1141,7 +1283,13 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
         props = scene.eevee
         
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
-            self.layout.prop(props, "use_bloom", text="")
+            self.layout.prop(props, "use_bloom")
+            self.layout.active = props.use_bloom
+            
+        else:
+            layout = self.layout
+            layout.label(text='Bloom')
+            layout.active = layout.active= False
 
     def draw(self, context):
         scene = context.scene
@@ -1167,7 +1315,7 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_effects_panel_depth_of_field"
-    bl_label = "Depth of Field"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
@@ -1179,7 +1327,16 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field(bpy.types.Panel):
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
-            self.layout.prop(tmg_cam_vars.scene_camera.data.dof, 'use_dof', text='')
+            camera = tmg_cam_vars.scene_camera
+            dof = camera.data.dof
+            
+            self.layout.prop(tmg_cam_vars.scene_camera.data.dof, 'use_dof')
+            self.layout.active = dof.use_dof
+            
+        else:
+            layout = self.layout
+            layout.label(text='Depth of Field')
+            layout.active = layout.active= False
 
     def draw(self, context):
         scene = context.scene
@@ -1202,12 +1359,30 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field(bpy.types.Panel):
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Aperture(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_effects_panel_depth_of_aperture"
-    bl_label = "Aperture"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_depth_of_field"
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
+
+    def draw_header(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
+            camera = tmg_cam_vars.scene_camera
+            dof = camera.data.dof
+            
+            layout = self.layout
+            layout.label(text='Aperture')
+            layout.active = dof.use_dof
+        
+        else:
+            layout = self.layout
+            layout.label(text='Aperture')
+            layout.active = layout.active= False
+            
 
     def draw(self, context):
         scene = context.scene
@@ -1232,12 +1407,29 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Aperture(bpy.types.Panel)
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Bokeh(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_effects_panel_depth_of_bokeh"
-    bl_label = "Bokeh"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_depth_of_field"
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
+
+    def draw_header(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
+            camera = tmg_cam_vars.scene_camera
+            dof = camera.data.dof
+            
+            layout = self.layout
+            layout.label(text='Bokeh')
+            layout.active = dof.use_dof
+            
+        else:
+            layout = self.layout
+            layout.label(text='Bokeh')
+            layout.active = layout.active= False
 
     def draw(self, context):
         scene = context.scene
@@ -1268,7 +1460,7 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Bokeh(bpy.types.Panel):
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Motion_Blur(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_effects_panel_motion_blur"
-    bl_label = "Motion Blur"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
@@ -1281,7 +1473,13 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Motion_Blur(bpy.types.Panel):
         props = scene.eevee
         
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
-            self.layout.prop(props, "use_motion_blur", text="")
+            self.layout.prop(props, "use_motion_blur")
+            self.layout.active = props.use_motion_blur
+            
+        else:
+            layout = self.layout
+            layout.label(text='Motion Blur')
+            layout.active = layout.active= False
 
     def draw(self, context):
         scene = context.scene
@@ -1308,7 +1506,7 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Motion_Blur(bpy.types.Panel):
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Screen_Space_Reflections(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_effects_panel_screen_space_reflections"
-    bl_label = "Screen Space Reflections"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
@@ -1321,7 +1519,13 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Screen_Space_Reflections(bpy.types.Panel
         props = scene.eevee
         
         if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
-            self.layout.prop(props, "use_ssr", text="")
+            self.layout.prop(props, "use_ssr")
+            self.layout.active = props.use_ssr
+            
+        else:
+            layout = self.layout
+            layout.label(text='Screen Space Reflections')
+            layout.active = layout.active= False
 
     def draw(self, context):
         scene = context.scene
@@ -1348,6 +1552,87 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Screen_Space_Reflections(bpy.types.Panel
             layout.prop(props, "ssr_border_fade")
             layout.prop(props, "ssr_firefly_fac")      
             
+            
+class OBJECT_PT_TMG_Scene_Effects_Panel_Shadows(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_scene_sffects_panel_shadows"
+    bl_label = "Shadows"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    def draw(self, context):
+        scene = context.scene
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()
+
+            layout.prop(props, "shadow_cube_size", text="Cube Size")
+            layout.prop(props, "shadow_cascade_size", text="Cascade Size")
+            layout.prop(props, "use_shadow_high_bitdepth")
+            layout.prop(props, "use_soft_shadows")
+            layout.prop(props, "light_threshold")
+
+
+class OBJECT_PT_TMG_Scene_Effects_Panel_Subsurface_Scattering(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_scene_sffects_panel_subsurface_scattering"
+    bl_label = "Subsurface Scattering"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    def draw(self, context):
+        scene = context.scene
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()
+
+            layout = layout.column()
+            layout.prop(props, "sss_samples")
+            layout.prop(props, "sss_jitter_threshold")
+            
+
+class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_scene_sffects_panel_volumetrics"
+    bl_label = "Volumetrics"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    def draw(self, context):
+        scene = context.scene
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+            
+            layout = layout.column(align=True)
+            layout.prop(props, "volumetric_start")
+            layout.prop(props, "volumetric_end")
+
+            layout = layout.column()
+            layout.prop(props, "volumetric_tile_size")
+            layout.prop(props, "volumetric_samples")
+            layout.prop(props, "volumetric_sample_distribution", text="Distribution") 
+
 
 class OBJECT_PT_TMG_Viewport_Panel(bpy.types.Panel):
     bl_idname = 'OBJECT_PT_tmg_viewport_panel'
@@ -1364,12 +1649,30 @@ class OBJECT_PT_TMG_Viewport_Panel(bpy.types.Panel):
 
 class OBJECT_PT_TMG_Viewport_Panel_Composition(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_viewport_panel_composition"
-    bl_label = "Composition"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_viewport_panel"
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
+
+    def draw_header(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        props = scene.eevee
+        
+        if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+            
+            layout.label(text='Composition')
+            layout.active = context.space_data.overlay.show_overlays
+            
+        else:
+            layout = self.layout
+            layout.label(text='Composition')
+            layout.active = layout.active= False
 
     def draw(self, context):
         scene = context.scene
@@ -1440,6 +1743,31 @@ class OBJECT_PT_TMG_Viewport_Panel_Display(bpy.types.Panel):
             sub.active = camera.data.show_passepartout
             sub.prop(tmg_cam_vars, "camera_passepartout_alpha", text="")
         
+        
+class OBJECT_PT_TMG_Viewport_Panel_User_Preferences(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_viewport_panel_user_preferences"
+    bl_label = "User Preferences"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_viewport_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    def draw(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        prefs = context.preferences
+        view = prefs.view
+        system = prefs.system
+    
+        if tmg_cam_vars.scene_camera or context.space_data.lock_camera:
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+
+            layout.prop(system, "use_region_overlap")
+            layout.prop(view, "render_display_type", text="Render In")
+        
 
 classes = (
     ## Properties
@@ -1460,6 +1788,7 @@ classes = (
     ## Render Panel
     OBJECT_PT_TMG_Render_Panel,
     OBJECT_PT_TMG_Render_Panel_Aspect,
+    OBJECT_PT_TMG_Render_Panel_Film,
     OBJECT_PT_TMG_Render_Panel_Render,
     OBJECT_PT_TMG_Render_Panel_Resolution,
     OBJECT_PT_TMG_Render_Panel_Sampling,
@@ -1474,11 +1803,15 @@ classes = (
     OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Bokeh,
     OBJECT_PT_TMG_Scene_Effects_Panel_Motion_Blur,
     OBJECT_PT_TMG_Scene_Effects_Panel_Screen_Space_Reflections,
+    OBJECT_PT_TMG_Scene_Effects_Panel_Shadows,
+    OBJECT_PT_TMG_Scene_Effects_Panel_Subsurface_Scattering,
+    OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics,
     
     ## Viewport Panel
     OBJECT_PT_TMG_Viewport_Panel,
     OBJECT_PT_TMG_Viewport_Panel_Composition,
     OBJECT_PT_TMG_Viewport_Panel_Display,
+    OBJECT_PT_TMG_Viewport_Panel_User_Preferences,
     
     ## Extra Operators
     OBJECT_OT_Add_Constraint,
@@ -1505,5 +1838,8 @@ if __name__ == "__main__":
 
 
 
+#prefs = context.preferences
+#view = prefs.view
+#system = prefs.system
 
-
+#layout.prop(system, "use_region_overlap")
