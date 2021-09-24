@@ -4,7 +4,7 @@ A blender 2.9x addon for managing camera settings
 Tutorial showcasing current features
 * https://youtu.be/JpSkzwqTtiM
 
-![image](https://user-images.githubusercontent.com/11281480/134587975-f649367f-392e-45cd-9c6f-c20afe3ce7a2.png)
+![image](https://user-images.githubusercontent.com/11281480/134621593-7c13eb28-b85f-421d-8214-d76c91a431c6.png)
 
 (I have no affiliation with these youtube channels / people but I find them to have epic tips / tricks)
 
