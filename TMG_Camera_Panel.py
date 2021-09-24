@@ -605,7 +605,7 @@ class OBJECT_PT_TMG_Camera_Panel_Perspective(bpy.types.Panel):
                 layout.prop(tmg_cam_vars.scene_camera.data, 'sensor_height')
                 
             layout.prop(tmg_cam_vars.scene_camera.data, 'clip_start')
-            layout.prop(tmg_cam_vars.scene_camera.data, 'clip_end')
+            layout.prop(tmg_cam_vars.scene_camera.data, 'clip_end')            
                                    
             
 class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
@@ -2469,6 +2469,39 @@ class OBJECT_PT_TMG_Viewport_Panel_User_Preferences(bpy.types.Panel):
 
             layout.prop(system, "use_region_overlap")
             layout.prop(view, "render_display_type", text="Render In")
+            
+            
+class OBJECT_PT_TMG_Viewport_Panel_View(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_viewport_panel_view"
+    bl_label = "View"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_viewport_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+            
+    def draw(self, context):
+        scene = context.scene
+        view = context.space_data
+        tmg_cam_vars = scene.tmg_cam_vars
+             
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False 
+            layout = layout.column()
+
+            subcol = layout.column()
+            subcol.active = bool(view.region_3d.view_perspective != 'CAMERA' or view.region_quadviews)
+            subcol.prop(view, "lens", text="Focal Length")
+
+            subcol = layout.column(align=True)
+            subcol.prop(view, "clip_start", text="Clip Start")
+            subcol.prop(view, "clip_end", text="End")
+
+            layout = layout.column(align=True)
+            layout.prop(view, "use_render_border")
+            layout.active = view.region_3d.view_perspective != 'CAMERA'  
         
 
 classes = (
@@ -2532,7 +2565,8 @@ classes = (
     OBJECT_PT_TMG_Viewport_Panel, 
     OBJECT_PT_TMG_Viewport_Panel_Composition, 
     OBJECT_PT_TMG_Viewport_Panel_Display, 
-    OBJECT_PT_TMG_Viewport_Panel_User_Preferences, 
+    OBJECT_PT_TMG_Viewport_Panel_User_Preferences,
+    OBJECT_PT_TMG_Viewport_Panel_View, 
     
     ## Extra Operators
     OBJECT_OT_Add_Constraint, 
