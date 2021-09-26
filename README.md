@@ -2,7 +2,7 @@
 A blender 2.9x addon for managing camera settings
 
 Tutorial showcasing current features
-* https://youtu.be/JpSkzwqTtiM
+* https://youtu.be/gdwE-INtjs4
 
 ## My Goals for this add-on:
 * Keep the layout as simple / unified as possible without adding too much bloat (Might have stretched this goal a little xD)
