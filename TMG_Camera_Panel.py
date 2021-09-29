@@ -1510,34 +1510,38 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Acceleration_Structure(bpy.types.Pa
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            import _cycles
+
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False
+
+            scene = context.scene
+            cscene = scene.cycles
+            use_cpu = context.scene.cycles
+
+            col = layout.column()
+
+            use_embree = False
+            if use_cpu:
+                use_embree = _cycles.with_embree
+                if not use_embree:
+                    sub = col.column(align=True)
+                    sub.label(text="Cycles built without Embree support")
+                    sub.label(text="CPU raytracing performance will be poor")
+
+            col.prop(cscene, "debug_use_spatial_splits")
+            sub = col.column()
+            sub.active = not use_embree
+            sub.prop(cscene, "debug_use_hair_bvh")
+            sub = col.column()
+            sub.active = not cscene.debug_use_spatial_splits and not use_embree
+            sub.prop(cscene, "debug_bvh_time_steps")
+            
             if rd.engine == "CYCLES":
-                import _cycles
-
-                layout = self.layout
-                layout.use_property_split = True
-                layout.use_property_decorate = False
-
-                scene = context.scene
-                cscene = scene.cycles
-                use_cpu = context.scene.cycles
-
-                col = layout.column()
-
-                use_embree = False
-                if use_cpu:
-                    use_embree = _cycles.with_embree
-                    if not use_embree:
-                        sub = col.column(align=True)
-                        sub.label(text="Cycles built without Embree support")
-                        sub.label(text="CPU raytracing performance will be poor")
-
-                col.prop(cscene, "debug_use_spatial_splits")
-                sub = col.column()
-                sub.active = not use_embree
-                sub.prop(cscene, "debug_use_hair_bvh")
-                sub = col.column()
-                sub.active = not cscene.debug_use_spatial_splits and not use_embree
-                sub.prop(cscene, "debug_bvh_time_steps")
+                layout.active = True
+            else:
+                layout.active = False
         
         
 class OBJECT_PT_TMG_Render_Panel_Performance_Final_Render(bpy.types.Panel):
@@ -1572,18 +1576,22 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Final_Render(bpy.types.Panel):
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False
+
+            scene = context.scene
+            rd = scene.render
+
+            col = layout.column()
+
+            col.prop(rd, "use_save_buffers")
+            col.prop(rd, "use_persistent_data", text="Persistent Data")
+            
             if rd.engine == "CYCLES":
-                layout = self.layout
-                layout.use_property_split = True
-                layout.use_property_decorate = False
-
-                scene = context.scene
-                rd = scene.render
-
-                col = layout.column()
-
-                col.prop(rd, "use_save_buffers")
-                col.prop(rd, "use_persistent_data", text="Persistent Data")
+                layout.active = True
+            else:
+                layout.active = False
         
         
 class OBJECT_PT_TMG_Render_Panel_Performance_Tiles(bpy.types.Panel):
@@ -1618,25 +1626,29 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Tiles(bpy.types.Panel):
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False
+
+            scene = context.scene
+            rd = scene.render
+            cscene = scene.cycles
+
+            col = layout.column()
+
+            sub = col.column(align=True)
+            sub.prop(rd, "tile_x", text="Tiles X")
+            sub.prop(rd, "tile_y", text="Y")
+            col.prop(cscene, "tile_order", text="Order")
+
+            sub = col.column()
+            sub.active = not rd.use_save_buffers and not cscene.use_adaptive_sampling
+            sub.prop(cscene, "use_progressive_refine")
+            
             if rd.engine == "CYCLES":
-                layout = self.layout
-                layout.use_property_split = True
-                layout.use_property_decorate = False
-
-                scene = context.scene
-                rd = scene.render
-                cscene = scene.cycles
-
-                col = layout.column()
-
-                sub = col.column(align=True)
-                sub.prop(rd, "tile_x", text="Tiles X")
-                sub.prop(rd, "tile_y", text="Y")
-                col.prop(cscene, "tile_order", text="Order")
-
-                sub = col.column()
-                sub.active = not rd.use_save_buffers and not cscene.use_adaptive_sampling
-                sub.prop(cscene, "use_progressive_refine")
+                layout.active = True
+            else:
+                layout.active = False
         
         
 class OBJECT_PT_TMG_Render_Panel_Performance_Threads(bpy.types.Panel):
@@ -1671,18 +1683,22 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Threads(bpy.types.Panel):
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False
+
+            scene = context.scene
+            rd = scene.render
+
+            layout.prop(rd, "threads_mode")
+            sub = layout.column(align=True)
+            sub.enabled = rd.threads_mode == 'FIXED'
+            sub.prop(rd, "threads")
+            
             if rd.engine == "CYCLES":
-                layout = self.layout
-                layout.use_property_split = True
-                layout.use_property_decorate = False
-
-                scene = context.scene
-                rd = scene.render
-
-                layout.prop(rd, "threads_mode")
-                sub = layout.column(align=True)
-                sub.enabled = rd.threads_mode == 'FIXED'
-                sub.prop(rd, "threads")
+                layout.active = True
+            else:
+                layout.active = False
         
         
 class OBJECT_PT_TMG_Render_Panel_Performance_Viewport(bpy.types.Panel):
@@ -1717,18 +1733,22 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Viewport(bpy.types.Panel):
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False
+
+            scene = context.scene
+            rd = scene.render
+            cscene = scene.cycles
+
+            col = layout.column()
+            col.prop(rd, "preview_pixel_size", text="Pixel Size")
+            col.prop(cscene, "preview_start_resolution", text="Start Pixels")
+            
             if rd.engine == "CYCLES":
-                layout = self.layout
-                layout.use_property_split = True
-                layout.use_property_decorate = False
-
-                scene = context.scene
-                rd = scene.render
-                cscene = scene.cycles
-
-                col = layout.column()
-                col.prop(rd, "preview_pixel_size", text="Pixel Size")
-                col.prop(cscene, "preview_start_resolution", text="Start Pixels")
+                layout.active = True
+            else:
+                layout.active = False
         
         
 class OBJECT_PT_TMG_Render_Panel_Resolution(bpy.types.Panel):
@@ -2036,20 +2056,29 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_AO(bpy.types.Panel):
 
     def draw_header(self, context):
         scene = context.scene
-        tmg_cam_vars = scene.tmg_cam_vars
+        rd = scene.render
         props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
-            self.layout.prop(props, "use_gtao")
-            self.layout.active = props.use_gtao
+            layout.prop(props, "use_gtao")
+            layout.active = props.use_gtao
         
         else:
-            layout = self.layout
             layout.label(text='Ambient Occlusion')
             layout.active = layout.active= False
+            
+        if rd.engine == "BLENDER_EEVEE":
+            layout.active = True
+        else:
+            layout.active = False
+            
 
     def draw(self, context):
         scene = context.scene
+        rd = scene.render
         props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
     
@@ -2067,6 +2096,11 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_AO(bpy.types.Panel):
             layout.prop(props, "gtao_quality")
             layout.prop(props, "use_gtao_bent_normals")
             layout.prop(props, "use_gtao_bounce")
+            
+        if rd.engine == "BLENDER_EEVEE":
+            layout.active = True
+        else:
+            layout.active = False
                
             
 class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
@@ -2080,20 +2114,28 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
 
     def draw_header(self, context):
         scene = context.scene
-        tmg_cam_vars = scene.tmg_cam_vars
+        rd = scene.render
         props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
-            self.layout.prop(props, "use_bloom")
-            self.layout.active = props.use_bloom
+            layout.prop(props, "use_bloom")
+            layout.active = props.use_bloom
             
         else:
-            layout = self.layout
             layout.label(text='Bloom')
             layout.active = layout.active= False
+            
+        if rd.engine == "BLENDER_EEVEE":
+            layout.active = True
+        else:
+            layout.active = False
 
     def draw(self, context):
         scene = context.scene
+        rd = scene.render
         props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
     
@@ -2112,6 +2154,11 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
             layout.prop(props, "bloom_color")
             layout.prop(props, "bloom_intensity")
             layout.prop(props, "bloom_clamp")
+            
+            if rd.engine == "BLENDER_EEVEE":
+                layout.active = True
+            else:
+                layout.active = False
 
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field(bpy.types.Panel):
@@ -2316,20 +2363,28 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Screen_Space_Reflections(bpy.types.Panel
 
     def draw_header(self, context):
         scene = context.scene
-        tmg_cam_vars = scene.tmg_cam_vars
+        rd = scene.render
         props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
-            self.layout.prop(props, "use_ssr")
-            self.layout.active = props.use_ssr
+            layout.prop(props, "use_ssr")
+            layout.active = props.use_ssr
             
         else:
-            layout = self.layout
             layout.label(text='Screen Space Reflections')
             layout.active = layout.active= False
+            
+        if rd.engine == "BLENDER_EEVEE":
+            layout.active = True
+        else:
+            layout.active = False
 
     def draw(self, context):
         scene = context.scene
+        rd = scene.render
         props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
     
@@ -2351,20 +2406,41 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Screen_Space_Reflections(bpy.types.Panel
             layout.prop(props, "ssr_max_roughness")
             layout.prop(props, "ssr_thickness")
             layout.prop(props, "ssr_border_fade")
-            layout.prop(props, "ssr_firefly_fac")      
+            layout.prop(props, "ssr_firefly_fac")  
+            
+        if rd.engine == "BLENDER_EEVEE":
+            self.layout.active = True
+        else:
+            self.layout.active = False    
             
             
 class OBJECT_PT_TMG_Scene_Effects_Panel_Shadows(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_sffects_panel_shadows"
-    bl_label = "Shadows"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
 
+    def draw_header(self, context):
+        scene = context.scene
+        rd = scene.render
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        
+        layout.label(text='Shadows')
+            
+        if rd.engine == "BLENDER_EEVEE":
+            layout.active = True
+        else:
+            layout.active = False
+
     def draw(self, context):
         scene = context.scene
+        rd = scene.render
         props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
         
@@ -2379,6 +2455,11 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Shadows(bpy.types.Panel):
             layout.prop(props, "use_shadow_high_bitdepth")
             layout.prop(props, "use_soft_shadows")
             layout.prop(props, "light_threshold")
+            
+        if rd.engine == "BLENDER_EEVEE":
+            self.layout.active = True
+        else:
+            self.layout.active = False 
 
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Stereoscopy(bpy.types.Panel):
@@ -2447,15 +2528,31 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Stereoscopy(bpy.types.Panel):
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Subsurface_Scattering(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_sffects_panel_subsurface_scattering"
-    bl_label = "Subsurface Scattering"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
 
+    def draw_header(self, context):
+        scene = context.scene
+        rd = scene.render
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        
+        layout.label(text='Subsurface Scattering')
+            
+        if rd.engine == "BLENDER_EEVEE":
+            layout.active = True
+        else:
+            layout.active = False
+
     def draw(self, context):
         scene = context.scene
+        rd = scene.render
         props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
         
@@ -2469,18 +2566,39 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Subsurface_Scattering(bpy.types.Panel):
             layout.prop(props, "sss_samples")
             layout.prop(props, "sss_jitter_threshold")
             
+        if rd.engine == "BLENDER_EEVEE":
+            self.layout.active = True
+        else:
+            self.layout.active = False 
+            
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_sffects_panel_volumetrics"
-    bl_label = "Volumetrics"
+    bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
 
+    def draw_header(self, context):
+        scene = context.scene
+        rd = scene.render
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        
+        layout.label(text='Volumetrics')
+            
+        if rd.engine == "BLENDER_EEVEE":
+            layout.active = True
+        else:
+            layout.active = False
+
     def draw(self, context):
         scene = context.scene
+        rd = scene.render
         props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
         
@@ -2497,6 +2615,11 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics(bpy.types.Panel):
             layout.prop(props, "volumetric_tile_size")
             layout.prop(props, "volumetric_samples")
             layout.prop(props, "volumetric_sample_distribution", text="Distribution") 
+            
+        if rd.engine == "BLENDER_EEVEE":
+            self.layout.active = True
+        else:
+            self.layout.active = False 
 
 
 class OBJECT_PT_TMG_Viewport_Panel(bpy.types.Panel):
