@@ -16,8 +16,8 @@ bl_info = {
     "name": "TMG_Camera_Tools",
     "author": "Johnathan Mueller",
     "descrtion": "A panel to set camera sensor values for rendering",
-    "blender": (2, 80, 0),
-    "version": (0, 2, 3),
+    "blender": (3, 0, 0),
+    "version": (0, 2, 4),
     "location": "View3D (ObjectMode) > Sidebar > TMG_Camera Tab",
     "warning": "",
     "category": "Object"
@@ -1044,6 +1044,7 @@ class OBJECT_PT_TMG_Output_Panel_Image_Settings(bpy.types.Panel):
 
     def draw(self, context):
         scene = context.scene
+        rd = scene.render
         props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
         
@@ -1056,6 +1057,11 @@ class OBJECT_PT_TMG_Output_Panel_Image_Settings(bpy.types.Panel):
             image_settings = rd.image_settings
 
             layout.prop(scene, 'use_nodes')
+            
+            layout.prop(rd, "use_border")
+            sub = layout.column(align=True)
+            sub.active = rd.use_border
+            sub.prop(rd, "use_crop_to_border")
 
             layout = layout.column(heading="Saving")
             layout.prop(rd, "use_file_extension")
@@ -1063,12 +1069,7 @@ class OBJECT_PT_TMG_Output_Panel_Image_Settings(bpy.types.Panel):
 
             layout.prop(scene.render.image_settings, 'file_format')
             layout.prop(scene.render.image_settings, 'color_mode')
-
-            if not rd.is_movie_format:
-                layout = layout.column(heading="Image Sequence")
-                layout.prop(rd, "use_overwrite")
-                layout.prop(rd, "use_placeholder")          
-
+    
             
 class OBJECT_PT_TMG_Passes_Panel(bpy.types.Panel):
     bl_idname = 'OBJECT_PT_tmg_passes_panel'
@@ -1115,21 +1116,25 @@ class OBJECT_PT_TMG_Passes_Panel_Cryptomatte(bpy.types.Panel):
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()
+
+            view_layer = context.view_layer
+
+            layout.prop(view_layer, "use_pass_cryptomatte_object", text="Object")
+            layout.prop(view_layer, "use_pass_cryptomatte_material", text="Material")
+            layout.prop(view_layer, "use_pass_cryptomatte_asset", text="Asset")
+#            col = layout.column()
+#                layout.active = any((view_layer.use_pass_cryptomatte_object, view_layer.use_pass_cryptomatte_material, view_layer.use_pass_cryptomatte_asset))
+            layout.prop(view_layer, "pass_cryptomatte_depth", text="Levels")
+            layout.prop(view_layer, "use_pass_cryptomatte_accurate", text="Accurate Mode")
+        
             if rd.engine == "BLENDER_EEVEE" or rd.engine == "CYCLES":
-                layout = self.layout
-                layout.use_property_split = True
-                layout.use_property_decorate = False  # No animation.
-                layout = layout.column()
-
-                view_layer = context.view_layer
-
-                layout.prop(view_layer, "use_pass_cryptomatte_object", text="Object")
-                layout.prop(view_layer, "use_pass_cryptomatte_material", text="Material")
-                layout.prop(view_layer, "use_pass_cryptomatte_asset", text="Asset")
-    #            col = layout.column()
-                layout.active = any((view_layer.use_pass_cryptomatte_object, view_layer.use_pass_cryptomatte_material, view_layer.use_pass_cryptomatte_asset))
-                layout.prop(view_layer, "pass_cryptomatte_depth", text="Levels")
-                layout.prop(view_layer, "use_pass_cryptomatte_accurate", text="Accurate Mode")
+                layout.active = True
+            else:
+                layout.active = False
         
     
 class OBJECT_PT_TMG_Passes_Panel_Data(bpy.types.Panel):
@@ -1418,6 +1423,7 @@ class OBJECT_PT_TMG_Render_Panel_Aspect(bpy.types.Panel):
 
     def draw(self, context):
         scene = context.scene
+        rd = scene.render
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
@@ -1427,9 +1433,12 @@ class OBJECT_PT_TMG_Render_Panel_Aspect(bpy.types.Panel):
             layout = layout.column()
 
             layout.prop(tmg_cam_vars, 'cam_resolution_mode_presets', text='Preset')
-            layout.prop(scene.render, 'pixel_aspect_x', text='X')
-            layout.prop(scene.render, 'pixel_aspect_y', text='Y')
-         
+#            layout.prop(scene.render, 'pixel_aspect_x', text='X')
+#            layout.prop(scene.render, 'pixel_aspect_y', text='Y')
+
+            layout.prop(rd, "pixel_aspect_x", text="Aspect X")
+            layout.prop(rd, "pixel_aspect_y", text="Y")
+            
          
 class OBJECT_PT_TMG_Render_Panel_Film(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_render_panel_film"
@@ -1848,7 +1857,7 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Advanced(bpy.types.Panel):
             col.active = not(cscene.use_adaptive_sampling)
             col.prop(cscene, "sampling_pattern", text="Pattern")
 
-            layout.prop(cscene, "use_square_samples")
+#            layout.prop(cscene, "use_square_samples")
 
             layout.separator()
 
@@ -1857,10 +1866,10 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Advanced(bpy.types.Panel):
             col.prop(cscene, "min_transparent_bounces")
             col.prop(cscene, "light_sampling_threshold", text="Light Threshold")
 
-            if cscene.progressive != 'PATH' and use_branched_path(context):
-                col = layout.column(align=True)
-                col.prop(cscene, "sample_all_lights_direct")
-                col.prop(cscene, "sample_all_lights_indirect")
+#            if cscene.progressive != 'PATH' and use_branched_path(context):
+#                col = layout.column(align=True)
+#                col.prop(cscene, "sample_all_lights_direct")
+#                col.prop(cscene, "sample_all_lights_indirect")
 
             for view_layer in scene.view_layers:
                 if view_layer.samples > 0:
@@ -1902,7 +1911,7 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Denoising(bpy.types.Panel):
 
     def draw(self, context):
         scene = context.scene
-        scene_eevee = scene.eevee
+        cscene = scene.cycles
         rd = scene.render
         cscene = scene.cycles
         tmg_cam_vars = scene.tmg_cam_vars
@@ -1914,39 +1923,83 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Denoising(bpy.types.Panel):
             layout.use_property_split = True
             layout.use_property_decorate = False  # No animation.
             layout = layout.column()
-            
-            heading = layout.column(align=True, heading="Render")
+
+            layout.use_property_split = True
+            layout.use_property_decorate = False
+
+            heading = layout.column(align=True, heading="Noise Threshold")
             row = heading.row(align=True)
-            row.prop(cscene, "use_denoising", text="")
+            row.prop(cscene, "use_adaptive_sampling", text="")
             sub = row.row()
+            sub.active = cscene.use_adaptive_sampling
+            sub.prop(cscene, "adaptive_threshold", text="")
 
-            sub.active = cscene.use_denoising
-            for view_layer in scene.view_layers:
-                if view_layer.cycles.denoising_store_passes:
-                    sub.active = True
-
-            sub.prop(cscene, "denoiser", text="")
-
-            layout.separator()
-
-            heading = layout.column(align=False, heading="Viewport")
-            row = heading.row(align=True)
-            row.prop(cscene, "use_preview_denoising", text="")
-            sub = row.row()
-            sub.active = cscene.use_preview_denoising
-            sub.prop(cscene, "preview_denoiser", text="")
-
-            sub = heading.row(align=True)
-            sub.active = cscene.use_preview_denoising
-            sub.prop(cscene, "preview_denoising_start_sample", text="Start Sample")
-            sub = heading.row(align=True)
-            sub.active = cscene.use_preview_denoising
-            sub.prop(cscene, "preview_denoising_input_passes", text="Input Passes")
+            col = layout.column(align=True)
+            if cscene.use_adaptive_sampling:
+                col.prop(cscene, "samples", text=" Max Samples")
+                col.prop(cscene, "adaptive_min_samples", text="Min Samples")
+            else:
+                col.prop(cscene, "samples", text="Samples")
+            col.prop(cscene, "time_limit")
             
             if rd.engine == "CYCLES":
                 layout.active = True
             else:
                 layout.active = False
+         
+
+class OBJECT_PT_TMG_Render_Panel_Sampling_Denoising_Options(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_render_panel_sampling_denoising_options"
+    bl_label = ""
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_render_panel_sampling_denoising"
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    def draw_header(self, context):
+        scene = context.scene
+        rd = scene.render
+        cscene = scene.cycles
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            
+            layout.label(text='Denoising Options')
+            layout.prop(context.scene.cycles, "use_denoising", text="")
+        
+            if rd.engine == "CYCLES" and cscene.use_denoising:
+                layout.active = True
+            else:
+                layout.active = False
+        else:
+            layout.active = False
+
+    def draw(self, context):
+        scene = context.scene
+        rd = scene.render
+        cscene = scene.cycles
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+    
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            camera = tmg_cam_vars.scene_camera
+            
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()      
+
+            if rd.engine == "CYCLES" and cscene.use_denoising:
+                layout.active = cscene.use_denoising
+            else:
+                layout.active = False
+                
+            layout.prop(cscene, "denoiser", text="Denoiser")
+            layout.prop(cscene, "denoising_input_passes", text="Passes")
+            if cscene.denoiser == 'OPENIMAGEDENOISE':
+                layout.prop(cscene, "denoising_prefilter", text="Prefilter")
          
 
 class OBJECT_PT_TMG_Render_Panel_Sampling_Samples(bpy.types.Panel):
@@ -1991,18 +2044,19 @@ class OBJECT_PT_TMG_Render_Panel_Timeline(bpy.types.Panel):
         screen = context.screen
         tmg_cam_vars = scene.tmg_cam_vars
         
-        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA": 
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False  # No animation.
             layout = layout.column()
 
-            row = layout.row(align=True)
-            row.prop(scene, 'use_preview_range', text='')
-            row.prop(scene, 'frame_start', text='')
-            row.prop(scene, 'frame_end', text='')
+            col = layout.column(align=True)
+            col.prop(scene, "frame_start", text="Frame Start")
+            col.prop(scene, "frame_end", text="End")
+            col.prop(scene, "frame_step", text="Step")
 
             row = layout.row(align=True)
+            row.alignment = 'CENTER'
             row.operator("screen.frame_jump", text="", icon='REW').end = False
             row.operator("screen.keyframe_jump", text="", icon='PREV_KEYFRAME').next = False
             if not screen.is_animation_playing:
@@ -2732,6 +2786,140 @@ class OBJECT_PT_TMG_Viewport_Panel_Display(bpy.types.Panel):
             sub.prop(tmg_cam_vars, "camera_passepartout_alpha", text="")
         
         
+class OBJECT_PT_TMG_Viewport_Panel_Sampling_Denoising(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_viewport_panel_sampling_denoising"
+    bl_label = ""
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_viewport_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    def draw_header(self, context):
+        scene = context.scene
+        scene_eevee = scene.eevee
+        rd = scene.render
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        layout.label(text='Denoising')
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            if rd.engine == "CYCLES":
+                layout.active = True
+            else:
+                layout.active = False
+        else:
+            layout.active = False
+
+    def draw(self, context):
+        scene = context.scene
+        cscene = scene.cycles
+        rd = scene.render
+        cscene = scene.cycles
+        tmg_cam_vars = scene.tmg_cam_vars
+    
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            camera = tmg_cam_vars.scene_camera
+                
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()
+
+            heading = layout.column(align=True, heading="Noise Threshold")
+            row = heading.row(align=True)
+            row.prop(cscene, "use_preview_adaptive_sampling", text="")
+            sub = row.row()
+            sub.active = cscene.use_preview_adaptive_sampling
+            sub.prop(cscene, "preview_adaptive_threshold", text="")
+
+            if cscene.use_preview_adaptive_sampling:
+                col = layout.column(align=True)
+                col.prop(cscene, "preview_samples", text=" Max Samples")
+                col.prop(cscene, "preview_adaptive_min_samples", text="Min Samples")
+            else:
+                layout.prop(cscene, "preview_samples", text="Samples")
+            
+            if rd.engine == "CYCLES":
+                layout.active = True
+            else:
+                layout.active = False
+         
+
+class OBJECT_PT_TMG_Viewport_Panel_Sampling_Denoising_Options(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_viewport_panel_sampling_denoising_options"
+    bl_label = ""
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_viewport_panel_sampling_denoising"
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    def draw_header(self, context):
+        scene = context.scene
+        rd = scene.render
+        cscene = scene.cycles
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            
+            layout.label(text='Denoising Options')
+            layout.prop(context.scene.cycles, "use_preview_denoising", text="")
+        
+            if rd.engine == "CYCLES" and cscene.use_preview_denoising:
+                layout.active = True
+            else:
+                layout.active = False
+        else:
+            layout.active = False
+
+    def draw(self, context):
+        scene = context.scene
+        rd = scene.render
+        cscene = scene.cycles
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+    
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            camera = tmg_cam_vars.scene_camera
+            
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()      
+         
+#            col = layout.column()
+
+            if rd.engine == "CYCLES" and cscene.use_preview_denoising:
+                layout.active = cscene.use_preview_denoising
+            else:
+                layout.active = False
+                
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()
+            
+            layout.active = cscene.use_preview_denoising
+            layout.prop(cscene, "preview_denoiser", text="Denoiser")
+            layout.prop(cscene, "preview_denoising_input_passes", text="Passes")
+
+#            effective_preview_denoiser = get_effective_preview_denoiser(context)
+#            if effective_preview_denoiser == 'OPENIMAGEDENOISE':
+#                layout.prop(cscene, "preview_denoising_prefilter", text="Prefilter")
+
+#            layout.prop(cscene, "preview_denoising_start_sample", text="Start Sample")
+        
+#            if rd.engine == "CYCLES" and cscene.use_denoising:
+#                layout.active = True
+#            else:
+#                layout.active = False
+#        else:
+#            layout.active = False
+                
+        
 class OBJECT_PT_TMG_Viewport_Panel_User_Preferences(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_viewport_panel_user_preferences"
     bl_label = "User Preferences"
@@ -2842,6 +3030,7 @@ classes = (
     OBJECT_PT_TMG_Render_Panel_Sampling, 
     OBJECT_PT_TMG_Render_Panel_Sampling_Advanced,
     OBJECT_PT_TMG_Render_Panel_Sampling_Denoising,
+    OBJECT_PT_TMG_Render_Panel_Sampling_Denoising_Options,
     OBJECT_PT_TMG_Render_Panel_Sampling_Samples, 
     OBJECT_PT_TMG_Render_Panel_Timeline, 
     
@@ -2863,6 +3052,8 @@ classes = (
     OBJECT_PT_TMG_Viewport_Panel, 
     OBJECT_PT_TMG_Viewport_Panel_Composition, 
     OBJECT_PT_TMG_Viewport_Panel_Display, 
+    OBJECT_PT_TMG_Viewport_Panel_Sampling_Denoising,
+    OBJECT_PT_TMG_Viewport_Panel_Sampling_Denoising_Options,
     OBJECT_PT_TMG_Viewport_Panel_User_Preferences,
     OBJECT_PT_TMG_Viewport_Panel_View, 
     
