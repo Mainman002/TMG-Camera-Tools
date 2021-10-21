@@ -3,26 +3,6 @@ from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty, IntProperty, FloatProperty, FloatVectorProperty, PointerProperty
 from bpy.types import Operator, Header
 
-# GNU GENERAL PUBLIC LICENSE
-# Version 3, 29 June 2007
-
-# Extra online resources used in this script
-# https://blender.stackexchange.com/questions/155515/how-do-a-create-a-foldout-ui-panel
-
-# Thank you all that download, suggest, and request features
-# As well as the whole Blender community. You're all epic :)
-
-bl_info = {
-    "name": "TMG_Camera_Tools",
-    "author": "Johnathan Mueller",
-    "descrtion": "A panel to set camera sensor values for rendering",
-    "blender": (2, 80, 0),
-    "version": (0, 2, 3),
-    "location": "View3D (ObjectMode) > Sidebar > TMG_Camera Tab",
-    "warning": "",
-    "category": "Object"
-}
-
 
 active_dict = {
     "type" : "PERSP", ##[ PERSP, ORTHO, PANO ]
@@ -53,6 +33,7 @@ def _change_camera_presets(self, context):
     scene = context.scene
     tmg_cam_vars = scene.tmg_cam_vars
     camera = tmg_cam_vars.scene_camera
+
     
     ## divide sensor by 1.293 to get focal length (sometimes good values)
     
@@ -95,12 +76,71 @@ def _change_camera_presets(self, context):
     _set_cam_values(self, context)
 
 
+def _get_aspect(_mode, _x, _y):
+    if _mode == 0:
+        tx = _x
+        ty = _y
+
+    elif _mode == 1:
+        tx = _y
+        ty = _x
+
+    elif _mode == 2:
+        tx = _x
+        ty = _x
+
+    return tx, ty
+
+
+def _set_custom_property(_ob, _prop, _value):
+    _ob[str(_prop)] = _value
+
+
+def _get_custom_property(_ob, _prop):
+    return _ob[str(_prop)]
+
+
+def _get_res_preset(_mode):
+    tmp_res_x = 640
+    tmp_res_y = 480
+
+    if _mode == 0: # VGA
+        tmp_res_x = 640
+        tmp_res_y = 480
+    if _mode == 1: # HD
+        tmp_res_x = 1280
+        tmp_res_y = 720
+    if _mode == 2: # HD-F
+        tmp_res_x = 1920
+        tmp_res_y = 1080
+    if _mode == 3: # 2k
+        tmp_res_x = 2560
+        tmp_res_y = 1440
+    if _mode == 4: # 4k
+        tmp_res_x = 3840
+        tmp_res_y = 2160
+    if _mode == 5: # 8k
+        tmp_res_x = 7680
+        tmp_res_y = 4320
+
+    return tmp_res_x, tmp_res_y
+
+
 def _change_resolution_presets(self, context):
     scene = context.scene
     tmg_cam_vars = scene.tmg_cam_vars
     camera = tmg_cam_vars.scene_camera
     
-    camera["resolution"] = tmg_cam_vars.cam_resolution_presets
+    if tmg_cam_vars.cam_res_lock_modes == 0:
+        tmg_cam_vars.const_res_x = scene.render.resolution_x
+        tmg_cam_vars.const_res_y = scene.render.resolution_y
+        
+    if tmg_cam_vars.cam_res_lock_modes == 1:
+        tmg_cam_vars.res_x = scene.render.resolution_x
+        tmg_cam_vars.res_y = scene.render.resolution_y
+
+    
+    _set_custom_property( camera, "resolution", int(tmg_cam_vars.cam_resolution_presets) )
     _set_cam_res_values(self, context)
 
 
@@ -109,7 +149,7 @@ def _change_res_mode_presets(self, context):
     tmg_cam_vars = scene.tmg_cam_vars
     camera = tmg_cam_vars.scene_camera
     
-    camera["res_mode"] = tmg_cam_vars.cam_resolution_mode_presets
+    _set_custom_property( camera, "res_mode", int(tmg_cam_vars.cam_resolution_mode_presets) )
     _set_cam_res_values(self, context)
 
 
@@ -118,13 +158,17 @@ def _change_res_lock(self, context):
     tmg_cam_vars = scene.tmg_cam_vars
     camera = tmg_cam_vars.scene_camera
     
-    try:
-        if tmg_cam_vars.res_lock:
-            scene.render.resolution_x = camera["res_x"]
-            scene.render.resolution_y = camera["res_y"]
-    except:
-        camera["res_x"] = scene.render.resolution_x
-        camera["res_y"] = scene.render.resolution_y
+    if tmg_cam_vars.cam_res_lock_modes == '0':
+        scene.render.resolution_x = tmg_cam_vars.const_res_x
+        scene.render.resolution_y = tmg_cam_vars.const_res_y
+        
+    if tmg_cam_vars.cam_res_lock_modes == '1':
+        scene.render.resolution_x = _get_custom_property(camera, "res_x")
+        scene.render.resolution_y = _get_custom_property(camera, "res_y")
+        
+    if tmg_cam_vars.cam_res_lock_modes == '2':
+        scene.render.resolution_x = tmg_cam_vars.res_x
+        scene.render.resolution_y = tmg_cam_vars.res_y
     
     _set_cam_res_values(self, context)
 
@@ -132,61 +176,35 @@ def _change_res_lock(self, context):
 def _set_cam_res_values(self, context):
     scene = context.scene
     tmg_cam_vars = scene.tmg_cam_vars
-  
     camera = tmg_cam_vars.scene_camera
     
     if camera:
-        res_x = 1920
-        res_y = 1080
         tmp_res_x = 1920
         tmp_res_y = 1080
+        res_x = tmp_res_x
+        res_y = tmp_res_y
         
-        try:
-            res = camera["resolution"]
-            mode = camera["res_mode"]
-        except:
-            if not tmg_cam_vars.res_lock:
-                res = tmg_cam_vars.cam_resolution_presets
-                mode = tmg_cam_vars.cam_resolution_mode_presets
-        
-        if res == '0': # VGA
-            tmp_res_x = 640
-            tmp_res_y = 480
-        elif res == '1': # HD
-            tmp_res_x = 1280
-            tmp_res_y = 720
-        elif res == '2': # HD-F
-            tmp_res_x = 1920
-            tmp_res_y = 1080
-        elif res == '3': # 2k
-            tmp_res_x = 2560
-            tmp_res_y = 1440
-        elif res == '4': # 4k
-            tmp_res_x = 3840
-            tmp_res_y = 2160
-        elif res == '5': # 8k
-            tmp_res_x = 7680
-            tmp_res_y = 4320
+        res = _get_custom_property(camera, "resolution")
+        mode = _get_custom_property(camera, "res_mode")
             
-        if tmg_cam_vars.res_lock:
-            res_x = tmg_cam_vars.res_x
-            res_y = tmg_cam_vars.res_y
-        else:
-            if mode == '0':
-                res_x = tmp_res_x
-                res_y = tmp_res_y
-            elif mode == '1':
-                res_x = tmp_res_y
-                res_y = tmp_res_x
-            elif mode == '2':
-                res_x = tmp_res_x
-                res_y = tmp_res_x
+        if tmg_cam_vars.cam_res_lock_modes == '0':
+            res_x = tmg_cam_vars.const_res_x
+            res_y = tmg_cam_vars.const_res_y
+            tmp_di = { 'x': _get_aspect( int(tmg_cam_vars.cam_resolution_mode_presets), res_x, res_y)[0], 'y': _get_aspect( int(tmg_cam_vars.cam_resolution_mode_presets), res_x, res_y)[1] }
 
-        camera["res_x"] = int(res_x)
-        camera["res_y"] = int(res_y)
-        
-        scene.render.resolution_x = int(res_x)
-        scene.render.resolution_y = int(res_y)
+        if tmg_cam_vars.cam_res_lock_modes == '1':
+            res_x = _get_custom_property(camera, "res_x")
+            res_y = _get_custom_property(camera, "res_y")
+            tmp_di = { 'x': _get_aspect( int(tmg_cam_vars.cam_resolution_mode_presets), res_x, res_y)[0], 'y': _get_aspect( int(tmg_cam_vars.cam_resolution_mode_presets), res_x, res_y)[1] }
+
+        if tmg_cam_vars.cam_res_lock_modes == '2':
+            tmp_di = { 'x':_get_res_preset(res)[0], 'y':_get_res_preset(res)[1] }
+            res_x = int( tmp_di['x'] )
+            res_y = int( tmp_di['y'] )
+            tmp_di = { 'x': _get_aspect( int(tmg_cam_vars.cam_resolution_mode_presets), res_x, res_y)[0], 'y': _get_aspect( int(tmg_cam_vars.cam_resolution_mode_presets), res_x, res_y)[1] }
+
+        scene.render.resolution_x = int( tmp_di["x"] )
+        scene.render.resolution_y = int( tmp_di["y"] )
     
     
 def _change_scene_camera(self, context):
@@ -199,6 +217,26 @@ def _change_scene_camera(self, context):
         scene.camera = camera
         bpy.context.space_data.camera = camera
         tmg_cam_vars.camera_name = camera.name
+
+        if "res_x" in camera:
+            pass
+        else:
+            camera["res_x"] = 1920
+
+        if "res_y" in camera:
+            pass
+        else:
+            camera["res_y"] = 1080
+
+        if "resolution" in camera:
+            pass
+        else:
+            camera["resolution"] = 0
+
+        if "res_mode" in camera:
+            pass
+        else:
+            camera["res_mode"] = 0
         
         camera.data.passepartout_alpha = tmg_cam_vars.camera_passepartout_alpha
         camera.data.show_passepartout = tmg_cam_vars.use_camera_passepartout_alpha
@@ -207,26 +245,17 @@ def _change_scene_camera(self, context):
             tmg_cam_vars.camera_data_name = camera.name
         else:
             tmg_cam_vars.camera_data_name = camera.data.name
-        
-        try:
-            if camera["resolution"]:
-                tmg_cam_vars.cam_resolution_presets = camera["resolution"]
-            if camera["res_mode"]:
-                tmg_cam_vars.cam_resolution_mode_presets = camera["res_mode"]
-            if camera["res_x"]:
-                scene.render.resolution_x = int(camera["res_x"])
-            if camera["res_y"]:
-                scene.render.resolution_y = int(camera["res_y"])
-        except:
-            camera["res_mode"] = 0
-            camera["resolution"] = 2
-            camera["res_x"] = 1920
-            camera["res_y"] = 1080
             
-            tmg_cam_vars.cam_resolution_presets = str(camera["resolution"])
-            tmg_cam_vars.cam_resolution_mode_presets = str(camera["res_mode"])
-            scene.render.resolution_x = camera["res_x"]
-            scene.render.resolution_y = camera["res_y"]
+        if tmg_cam_vars.cam_res_lock_modes == '0':
+            scene.render.resolution_x = tmg_cam_vars.const_res_x
+            scene.render.resolution_y = tmg_cam_vars.const_res_y
+            
+        if tmg_cam_vars.cam_res_lock_modes == '1':
+            tmg_cam_vars.res_x = _get_custom_property(camera, "res_x")
+            tmg_cam_vars.res_y = _get_custom_property(camera, "res_y")
+            
+        tmg_cam_vars.cam_resolution_presets = str( _get_custom_property(camera, "resolution") )
+        tmg_cam_vars.cam_resolution_mode_presets = str( _get_custom_property(camera, "res_mode") )
         
         active_dict['type'] = camera.data.type
         active_dict['focal_l'] = camera.data.lens 
@@ -442,10 +471,39 @@ class OBJECT_OT_Select_Camera(bpy.types.Operator):
         scene = context.scene
         tmg_cam_vars = scene.tmg_cam_vars
         camera = tmg_cam_vars.scene_camera
-        
         _change_ob(self, context, camera)
         return {'FINISHED'}
     
+
+def _update_res_x(self, context):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    camera = tmg_cam_vars.scene_camera
+    _set_custom_property( camera, "res_x", int(tmg_cam_vars.res_x) )
+    scene.render.resolution_x = int( _get_custom_property(camera, "res_x") )
+ 
+    
+def _update_res_y(self, context):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    camera = tmg_cam_vars.scene_camera
+    _set_custom_property( camera, "res_y", int(tmg_cam_vars.res_y) )
+    scene.render.resolution_y = int( _get_custom_property(camera, "res_y") )
+
+
+def _update_const_res_x(self, context):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    camera = tmg_cam_vars.scene_camera
+    scene.render.resolution_x = int( tmg_cam_vars.const_res_x )
+    
+    
+def _update_const_res_y(self, context):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    camera = tmg_cam_vars.scene_camera
+    scene.render.resolution_y = int( tmg_cam_vars.const_res_y )
+
 
 class TMG_Camera_Properties(bpy.types.PropertyGroup):
     scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, poll=_tmg_search_cameras, description='Scene active camera', update=_change_scene_camera)
@@ -460,10 +518,12 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     curve_size_x : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
     curve_size_y : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
     curve_size_z : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
-    
-    res_lock : bpy.props.BoolProperty(default=False, update=_change_res_lock)
-    res_x : bpy.props.FloatProperty(default=1920, subtype='PIXEL', min=4, step=15, precision=0, update=_change_resolution_presets)
-    res_y : bpy.props.FloatProperty(default=1080, subtype='PIXEL', min=4, step=15, precision=0, update=_change_resolution_presets)
+
+    res_x : bpy.props.FloatProperty(default=1920, subtype='PIXEL', min=4, step=15, precision=0, update=_update_res_x, description='Sets res_x Custom_Property')
+    res_y : bpy.props.FloatProperty(default=1080, subtype='PIXEL', min=4, step=15, precision=0, update=_update_res_y, description='Sets res_y Custom_Property')
+
+    const_res_x : bpy.props.FloatProperty(default=1920, subtype='PIXEL', min=4, step=15, precision=0, update=_update_const_res_x, description='Sets res_x Custom_Property')
+    const_res_y : bpy.props.FloatProperty(default=1080, subtype='PIXEL', min=4, step=15, precision=0, update=_update_const_res_y, description='Sets res_y Custom_Property')
 
     use_camera_passepartout_alpha : bpy.props.BoolProperty(default=True, update=_camera_passepartout_alpha)
     camera_passepartout_alpha : bpy.props.FloatProperty(default=0.5, min=0.0, max=1.0, update=_camera_passepartout_alpha)
@@ -497,6 +557,12 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     ('1', 'Portrait', ''),
     ('2', 'Box', '')], update=_change_res_mode_presets)
     
+    cam_res_lock_modes : bpy.props.EnumProperty(name='Resolution Lock', default='0', description='Lock modes used when swapping between cameras',
+    items=[
+    ('0', 'Constant', ''),
+    ('1', 'Per Camera', ''),
+    ('2', 'Preset', '')], update=_change_res_lock)
+    
 
 class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
     bl_idname = 'OBJECT_PT_tmg_camera_panel'
@@ -505,9 +571,6 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
     bl_context = "objectmode"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    
-#    def draw_header_preset(self, context):
-#        test : bpy.types.BoolProperty(default=False)
 
     def draw(self, context):
         scene = context.scene
@@ -558,8 +621,6 @@ class OBJECT_PT_TMG_Camera_Panel_Name(bpy.types.Panel):
             layout.use_property_decorate = False 
             layout = layout.column()
                 
-#            col = layout.column(heading="Include", align=True)
-#            sub = col.column()
             layout.prop(tmg_cam_vars, 'camera_name_lock')
             
             if tmg_cam_vars.camera_name_lock:
@@ -1764,6 +1825,7 @@ class OBJECT_PT_TMG_Render_Panel_Resolution(bpy.types.Panel):
         scene = context.scene
         props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
+        camera = tmg_cam_vars.scene_camera
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
             layout = self.layout
@@ -1771,17 +1833,45 @@ class OBJECT_PT_TMG_Render_Panel_Resolution(bpy.types.Panel):
             layout.use_property_decorate = False  # No animation.
             layout = layout.column()
             
-            if tmg_cam_vars.res_lock:
+            
+            ## Global Scene Resolution
+            if tmg_cam_vars.cam_res_lock_modes == '0':
                 row = layout.row(align=True)
-                row.prop(tmg_cam_vars, 'res_lock', text='', icon="LOCKED")
+#                row.prop(tmg_cam_vars, 'res_lock', text='', icon="UNLOCKED")
+                # row.prop(scene.render, 'resolution_x', text='')
+                # row.prop(scene.render, 'resolution_y', text='')
+
+                row.prop(tmg_cam_vars, 'const_res_x', text='')
+                row.prop(tmg_cam_vars, 'const_res_y', text='')
+
+
+            ## Per Camera
+            if tmg_cam_vars.cam_res_lock_modes == '1':
+                row = layout.row(align=True)
                 row.prop(tmg_cam_vars, 'res_x', text='')
                 row.prop(tmg_cam_vars, 'res_y', text='')
-            else:
-                row = layout.row(align=True)
-                row.prop(tmg_cam_vars, 'res_lock', text='', icon="UNLOCKED")
-                row.prop(scene.render, 'resolution_x', text='')
-                row.prop(scene.render, 'resolution_y', text='')
+
+                # row.prop(scene.render, 'resolution_x', text='')
+                # row.prop(scene.render, 'resolution_y', text='')
+
+
+            ## Presets             
+            if tmg_cam_vars.cam_res_lock_modes == '2':
+                 row = layout.row(align=True)
+                 
+                 row.alignment = 'RIGHT'
+                 row.label(text='Width :')
+                 
+                 row.alignment = 'LEFT'
+                 row.label(text=str(scene.render.resolution_x))
+                 
+                 row.alignment = 'RIGHT'
+                 row.label(text='Height :')
+                 
+                 row.alignment = 'LEFT'
+                 row.label(text=str(scene.render.resolution_y))
             
+            layout.prop(tmg_cam_vars, 'cam_res_lock_modes')
             layout.prop(tmg_cam_vars, 'cam_resolution_presets')
             layout.prop(scene.render, 'resolution_percentage')
             
@@ -2097,10 +2187,10 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_AO(bpy.types.Panel):
             layout.prop(props, "use_gtao_bent_normals")
             layout.prop(props, "use_gtao_bounce")
             
-        if rd.engine == "BLENDER_EEVEE":
-            layout.active = True
-        else:
-            layout.active = False
+            if rd.engine == "BLENDER_EEVEE":
+                layout.active = True
+            else:
+                layout.active = False
                
             
 class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
@@ -2799,92 +2889,3 @@ class OBJECT_PT_TMG_Viewport_Panel_View(bpy.types.Panel):
             layout.active = view.region_3d.view_perspective != 'CAMERA'  
         
 
-classes = (
-    ## Properties
-    TMG_Camera_Properties,
-    
-    ## Camera Panel
-    OBJECT_PT_TMG_Camera_Panel, 
-    OBJECT_PT_TMG_Camera_Panel_Name, 
-    OBJECT_PT_TMG_Camera_Panel_Perspective, 
-    
-    ## Constraints Panel
-    OBJECT_PT_TMG_Constraints_Panel, 
-    OBJECT_PT_TMG_Constraints_Panel_Floor, 
-    OBJECT_PT_TMG_Constraints_Panel_Follow_Path, 
-    OBJECT_PT_TMG_Constraints_Panel_Follow_Path_Spline_Scale, 
-    OBJECT_PT_TMG_Constraints_Panel_Track_To, 
-    
-    ## Output Panel
-    OBJECT_PT_TMG_Output_Panel,
-    OBJECT_PT_TMG_Output_Panel_Image, 
-    OBJECT_PT_TMG_Output_Panel_Image_Settings,
-    
-    ## Passes Panel
-    OBJECT_PT_TMG_Passes_Panel, 
-    OBJECT_PT_TMG_Passes_Panel_Cryptomatte, 
-    OBJECT_PT_TMG_Passes_Panel_Data, 
-    OBJECT_PT_TMG_Passes_Panel_Effects, 
-    OBJECT_PT_TMG_Passes_Panel_Light, 
-    OBJECT_PT_TMG_Passes_Panel_Shader_AOV, 
-    
-    ## Render Panel
-    OBJECT_PT_TMG_Render_Panel,
-    OBJECT_PT_TMG_Render_Panel_Aspect, 
-    OBJECT_PT_TMG_Render_Panel_Film, 
-    OBJECT_PT_TMG_Render_Panel_Performance,
-    OBJECT_PT_TMG_Render_Panel_Performance_Acceleration_Structure,
-    OBJECT_PT_TMG_Render_Panel_Performance_Final_Render,
-    OBJECT_PT_TMG_Render_Panel_Performance_Tiles,
-    OBJECT_PT_TMG_Render_Panel_Performance_Threads,
-    OBJECT_PT_TMG_Render_Panel_Performance_Viewport,
-    OBJECT_PT_TMG_Render_Panel_Resolution, 
-    OBJECT_PT_TMG_Render_Panel_Sampling, 
-    OBJECT_PT_TMG_Render_Panel_Sampling_Advanced,
-    OBJECT_PT_TMG_Render_Panel_Sampling_Denoising,
-    OBJECT_PT_TMG_Render_Panel_Sampling_Samples, 
-    OBJECT_PT_TMG_Render_Panel_Timeline, 
-    
-    ## Scene Effects Panel
-    OBJECT_PT_TMG_Scene_Effects_Panel, 
-    OBJECT_PT_TMG_Scene_Effects_Panel_AO, 
-    OBJECT_PT_TMG_Scene_Effects_Panel_Bloom, 
-    OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field, 
-    OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Aperture, 
-    OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Bokeh, 
-    OBJECT_PT_TMG_Scene_Effects_Panel_Motion_Blur, 
-    OBJECT_PT_TMG_Scene_Effects_Panel_Screen_Space_Reflections, 
-    OBJECT_PT_TMG_Scene_Effects_Panel_Shadows, 
-    OBJECT_PT_TMG_Scene_Effects_Panel_Stereoscopy, 
-    OBJECT_PT_TMG_Scene_Effects_Panel_Subsurface_Scattering, 
-    OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics, 
-    
-    ## Viewport Panel
-    OBJECT_PT_TMG_Viewport_Panel, 
-    OBJECT_PT_TMG_Viewport_Panel_Composition, 
-    OBJECT_PT_TMG_Viewport_Panel_Display, 
-    OBJECT_PT_TMG_Viewport_Panel_User_Preferences,
-    OBJECT_PT_TMG_Viewport_Panel_View, 
-    
-    ## Extra Operators
-    OBJECT_OT_Add_Constraint, 
-    OBJECT_OT_Move_Constraint, 
-    OBJECT_OT_Remove_Constraint,
-    OBJECT_OT_Select_Camera,
-)
-
-
-def register():
-    for rsclass in classes:
-        bpy.utils.register_class(rsclass)
-        bpy.types.Scene.tmg_cam_vars = bpy.props.PointerProperty(type=TMG_Camera_Properties)
-
-
-def unregister():
-    for rsclass in classes:
-        bpy.utils.unregister_class(rsclass)
-
-
-if __name__ == "__main__":
-    register()
-    
