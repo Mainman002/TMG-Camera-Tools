@@ -1833,17 +1833,12 @@ class OBJECT_PT_TMG_Render_Panel_Resolution(bpy.types.Panel):
             layout.use_property_decorate = False  # No animation.
             layout = layout.column()
             
-            
             ## Global Scene Resolution
             if tmg_cam_vars.cam_res_lock_modes == '0':
                 row = layout.row(align=True)
-#                row.prop(tmg_cam_vars, 'res_lock', text='', icon="UNLOCKED")
-                # row.prop(scene.render, 'resolution_x', text='')
-                # row.prop(scene.render, 'resolution_y', text='')
 
                 row.prop(tmg_cam_vars, 'const_res_x', text='')
                 row.prop(tmg_cam_vars, 'const_res_y', text='')
-
 
             ## Per Camera
             if tmg_cam_vars.cam_res_lock_modes == '1':
@@ -1851,29 +1846,26 @@ class OBJECT_PT_TMG_Render_Panel_Resolution(bpy.types.Panel):
                 row.prop(tmg_cam_vars, 'res_x', text='')
                 row.prop(tmg_cam_vars, 'res_y', text='')
 
-                # row.prop(scene.render, 'resolution_x', text='')
-                # row.prop(scene.render, 'resolution_y', text='')
-
-
             ## Presets             
             if tmg_cam_vars.cam_res_lock_modes == '2':
-                 row = layout.row(align=True)
-                 
-                 row.alignment = 'RIGHT'
-                 row.label(text='Width :')
-                 
-                 row.alignment = 'LEFT'
-                 row.label(text=str(scene.render.resolution_x))
-                 
-                 row.alignment = 'RIGHT'
-                 row.label(text='Height :')
-                 
-                 row.alignment = 'LEFT'
-                 row.label(text=str(scene.render.resolution_y))
+                 res_prop = layout.row(align=True)
+                 res_prop.prop(scene.render, 'resolution_x', text='')
+                 res_prop.prop(scene.render, 'resolution_y', text='')
+                 res_prop.enabled = False
             
-            layout.prop(tmg_cam_vars, 'cam_res_lock_modes')
-            layout.prop(tmg_cam_vars, 'cam_resolution_presets')
-            layout.prop(scene.render, 'resolution_percentage')
+            layout.prop(tmg_cam_vars, 'cam_res_lock_modes', text="Lock")
+
+            preset = layout.column()
+            preset.prop(tmg_cam_vars, 'cam_resolution_presets', text="Presets")
+
+            if tmg_cam_vars.cam_res_lock_modes == '2':
+                preset.enabled = True
+                preset.active = True
+            else:
+                preset.enabled = False
+                preset.active = False
+
+            layout.prop(scene.render, 'resolution_percentage', text="%")
             
             
 class OBJECT_PT_TMG_Render_Panel_Sampling(bpy.types.Panel):
