@@ -60,7 +60,15 @@ classes = (
     ## Render Panel
     OBJECT_PT_TMG_Render_Panel,
     OBJECT_PT_TMG_Render_Panel_Aspect, 
+    OBJECT_PT_TMG_Render_Panel_Device,
     OBJECT_PT_TMG_Render_Panel_Film, 
+
+    OBJECT_PT_TMG_Render_Panel_Cycles_Light_Paths,
+    OBJECT_PT_TMG_Render_Panel_Cycles_Caustics,
+    OBJECT_PT_TMG_Render_Panel_Cycles_Clamping,
+    OBJECT_PT_TMG_Render_Panel_Cycles_Fast_GI_Approximation,
+    OBJECT_PT_TMG_Render_Panel_Cycles_Max_Bounces,
+
     OBJECT_PT_TMG_Render_Panel_Performance,
     OBJECT_PT_TMG_Render_Panel_Performance_Acceleration_Structure,
     OBJECT_PT_TMG_Render_Panel_Performance_Final_Render,
@@ -86,7 +94,11 @@ classes = (
     OBJECT_PT_TMG_Scene_Effects_Panel_Shadows, 
     OBJECT_PT_TMG_Scene_Effects_Panel_Stereoscopy, 
     OBJECT_PT_TMG_Scene_Effects_Panel_Subsurface_Scattering, 
-    OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics, 
+    OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Cycles,
+    OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee, 
+    OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Lighting,
+    # OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Samples,
+    OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Shadows,
     
     ## Viewport Panel
     OBJECT_PT_TMG_Viewport_Panel, 

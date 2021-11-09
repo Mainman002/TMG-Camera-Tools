@@ -1491,6 +1491,44 @@ class OBJECT_PT_TMG_Render_Panel_Aspect(bpy.types.Panel):
             layout.prop(scene.render, 'pixel_aspect_x', text='X')
             layout.prop(scene.render, 'pixel_aspect_y', text='Y')
          
+
+class OBJECT_PT_TMG_Render_Panel_Device(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_render_panel_device"
+    bl_label = "Device"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_render_panel"
+    COMPAT_ENGINES = {'CYCLES'}
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+            
+    def draw(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+             
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False 
+            layout = layout.column()
+
+            engine = context.scene.render.engine
+            cscene = scene.cycles
+
+            col = layout.column()
+            col.prop(cscene, "device")
+
+            col = layout.column()
+            col.prop(cscene, "feature_set")
+
+
+            col.prop(cscene, "shading_system")
+
          
 class OBJECT_PT_TMG_Render_Panel_Film(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_render_panel_film"
@@ -1524,6 +1562,161 @@ class OBJECT_PT_TMG_Render_Panel_Film(bpy.types.Panel):
             sub = sub.row(align=True)
             sub.active = props.use_overscan
             sub.prop(props, "overscan_size", text="")
+
+
+class OBJECT_PT_TMG_Render_Panel_Cycles_Light_Paths(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
+    bl_label = "Light Paths"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_render_panel"
+    COMPAT_ENGINES = {'CYCLES'}
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
+    # def draw_header_preset(self, context):
+    #     CYCLES_PT_integrator_presets.draw_panel_header(self.layout)
+
+    def draw(self, context):
+        pass
+
+
+class OBJECT_PT_TMG_Render_Panel_Cycles_Max_Bounces(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_render_panel_cycles_max_bounces"
+    bl_label = "Max Bounces"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
+    COMPAT_ENGINES = {'CYCLES'}
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        scene = context.scene
+        cscene = scene.cycles
+
+        col = layout.column(align=True)
+        col.prop(cscene, "max_bounces", text="Total")
+
+        col = layout.column(align=True)
+        col.prop(cscene, "diffuse_bounces", text="Diffuse")
+        col.prop(cscene, "glossy_bounces", text="Glossy")
+        col.prop(cscene, "transparent_max_bounces", text="Transparency")
+        col.prop(cscene, "transmission_bounces", text="Transmission")
+        col.prop(cscene, "volume_bounces", text="Volume")
+
+
+class OBJECT_PT_TMG_Render_Panel_Cycles_Clamping(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_render_panel_cycles_clamping"
+    bl_label = "Clamping"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
+    COMPAT_ENGINES = {'CYCLES'}
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        scene = context.scene
+        cscene = scene.cycles
+
+        col = layout.column(align=True)
+        col.prop(cscene, "sample_clamp_direct", text="Direct Light")
+        col.prop(cscene, "sample_clamp_indirect", text="Indirect Light")
+
+
+class OBJECT_PT_TMG_Render_Panel_Cycles_Caustics(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_render_panel_cycles_caustics"
+    bl_label = "Caustics"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
+    COMPAT_ENGINES = {'CYCLES'}
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        scene = context.scene
+        cscene = scene.cycles
+
+        col = layout.column()
+        col.prop(cscene, "blur_glossy")
+        col = layout.column(heading="Caustics", align=True)
+        col.prop(cscene, "caustics_reflective", text="Reflective")
+        col.prop(cscene, "caustics_refractive", text="Refractive")
+
+
+class OBJECT_PT_TMG_Render_Panel_Cycles_Fast_GI_Approximation(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_render_panel_cycles_fast_gi_approximation"
+    bl_label = "Fast GI Approximation"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
+    COMPAT_ENGINES = {'CYCLES'}
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
+    def draw_header(self, context):
+        scene = context.scene
+        cscene = scene.cycles
+
+        self.layout.prop(cscene, "use_fast_gi", text="")
+
+    def draw(self, context):
+        scene = context.scene
+        cscene = scene.cycles
+        world = scene.world
+
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        col = layout.column(align=True)
+        col.prop(cscene, "ao_bounces", text="Viewport Bounces")
+        col.prop(cscene, "ao_bounces_render", text="Render Bounces")
+
+        if world:
+          light = world.light_settings
+          col = layout.column(align=True)
+          col.prop(light, "ao_factor", text="AO Factor")
+          col.prop(light, "distance", text="AO Distance")
   
   
 class OBJECT_PT_TMG_Render_Panel_Performance(bpy.types.Panel):
@@ -1887,8 +2080,14 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Advanced(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel_sampling"
+    COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw_header(self, context):
         scene = context.scene
@@ -1962,23 +2161,24 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Denoising(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel_sampling"
+    COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
 
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
     def draw_header(self, context):
         scene = context.scene
-        scene_eevee = scene.eevee
-        rd = scene.render
         tmg_cam_vars = scene.tmg_cam_vars
         
         layout = self.layout
         layout.label(text='Denoising')
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
-            if rd.engine == "CYCLES":
-                layout.active = True
-            else:
-                layout.active = False
+            layout.active = True
         else:
             layout.active = False
 
@@ -2025,10 +2225,9 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Denoising(bpy.types.Panel):
             sub.active = cscene.use_preview_denoising
             sub.prop(cscene, "preview_denoising_input_passes", text="Input Passes")
             
-            if rd.engine == "CYCLES":
-                layout.active = True
-            else:
-                layout.active = False
+            layout.active = True
+        else:
+            layout.active = False
          
 
 class OBJECT_PT_TMG_Render_Panel_Sampling_Samples(bpy.types.Panel):
@@ -2133,8 +2332,14 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_AO(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw_header(self, context):
         scene = context.scene
@@ -2191,8 +2396,14 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw_header(self, context):
         scene = context.scene
@@ -2440,8 +2651,14 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Screen_Space_Reflections(bpy.types.Panel
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw_header(self, context):
         scene = context.scene
@@ -2502,8 +2719,14 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Shadows(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw_header(self, context):
         scene = context.scene
@@ -2614,8 +2837,14 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Subsurface_Scattering(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw_header(self, context):
         scene = context.scene
@@ -2654,29 +2883,28 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Subsurface_Scattering(bpy.types.Panel):
             self.layout.active = False 
             
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_scene_sffects_panel_volumetrics"
+class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_volumetrics_eevee"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 #    bl_options = {'HIDE_HEADER'}
 
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
     def draw_header(self, context):
         scene = context.scene
-        rd = scene.render
-        props = scene.eevee
+        rd = scene.render        
         tmg_cam_vars = scene.tmg_cam_vars
         
         layout = self.layout
-        
         layout.label(text='Volumetrics')
-            
-        if rd.engine == "BLENDER_EEVEE":
-            layout.active = True
-        else:
-            layout.active = False
 
     def draw(self, context):
         scene = context.scene
@@ -2684,7 +2912,7 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics(bpy.types.Panel):
         props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
         
-        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":                           
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False  # No animation.
@@ -2697,8 +2925,178 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics(bpy.types.Panel):
             layout.prop(props, "volumetric_tile_size")
             layout.prop(props, "volumetric_samples")
             layout.prop(props, "volumetric_sample_distribution", text="Distribution") 
-            
-        if rd.engine == "BLENDER_EEVEE":
+
+            self.layout.active = True
+        else:
+            self.layout.active = False 
+
+
+class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Samples(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_volumetrics_eevee_samples"
+    bl_label = ""
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_volumetrics_eevee"
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
+    def draw_header(self, context):
+        scene = context.scene
+        rd = scene.render
+        tmg_cam_vars = scene.tmg_cam_vars
+                           
+        layout = self.layout
+        layout.label(text='Samples')
+
+    def draw(self, context):
+        scene = context.scene
+        rd = scene.render
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+
+                                       
+            layout = layout.column()
+            layout.prop(props, "volumetric_samples", text="Render")
+            layout.prop(props, "volumetric_samples", text="Viewport")
+
+            self.layout.active = True
+        else:
+            self.layout.active = False 
+
+
+class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Lighting(bpy.types.Panel):
+    bl_label = "Lighting"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_volumetrics_eevee"
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
+    def draw_header(self, context):
+        scene = context.scene
+        rd = scene.render   
+        props = scene.eevee        
+        tmg_cam_vars = scene.tmg_cam_vars
+                   
+        self.layout.prop(props, "use_volumetric_lights", text="")
+
+    def draw(self, context):
+        scene = context.scene
+        rd = scene.render     
+        props = scene.eevee   
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            scene = context.scene
+                           
+            layout.active = props.use_volumetric_lights
+            layout.prop(props, "volumetric_light_clamp", text="Light Clamping")
+
+            self.layout.active = True
+        else:
+            self.layout.active = False 
+
+
+class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Shadows(bpy.types.Panel):
+    bl_label = "Shadows"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_volumetrics_eevee"
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
+    def draw_header(self, context):
+        scene = context.scene
+        rd = scene.render
+        props = scene.eevee   
+        tmg_cam_vars = scene.tmg_cam_vars
+   
+        self.layout.prop(props, "use_volumetric_shadows", text="")
+
+    def draw(self, context):
+        scene = context.scene
+        rd = scene.render
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+         
+            layout.active = props.use_volumetric_shadows
+            layout.prop(props, "volumetric_shadow_samples", text="Samples")
+
+            self.layout.active = True
+        else:
+            self.layout.active = False 
+
+
+class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Cycles(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_volumetrics_cycles"
+    bl_label = ""
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    COMPAT_ENGINES = {'CYCLES'}
+    bl_options = {"DEFAULT_CLOSED"}
+#    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
+    def draw_header(self, context):
+        scene = context.scene
+        rd = scene.render        
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        layout.label(text='Volumetrics')
+
+    def draw(self, context):
+        scene = context.scene
+        rd = scene.render
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":                           
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False
+
+            scene = context.scene
+            cscene = scene.cycles
+
+            col = layout.column(align=True)
+            col.prop(cscene, "volume_step_rate", text="Step Rate Render")
+            col.prop(cscene, "volume_preview_step_rate", text="Viewport")
+            layout.prop(cscene, "volume_max_steps", text="Max Steps")
+            col.prop(rd, "simplify_volumes", text="Volume Resolution")
+
             self.layout.active = True
         else:
             self.layout.active = False 
