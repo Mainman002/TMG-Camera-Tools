@@ -5,6 +5,8 @@ from . TMG_Camera_Panel import *
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty, IntProperty, FloatProperty, FloatVectorProperty, PointerProperty
 from bpy.types import Operator, Header
+from bpy_extras.node_utils import find_node_input
+from bl_ui.utils import PresetPanel
 
 
 # GNU GENERAL PUBLIC LICENSE
@@ -86,6 +88,9 @@ classes = (
     OBJECT_PT_TMG_Scene_Effects_Panel, 
     OBJECT_PT_TMG_Scene_Effects_Panel_AO, 
     OBJECT_PT_TMG_Scene_Effects_Panel_Bloom, 
+    OBJECT_PT_TMG_Scene_Effects_Panel_Color_M,
+    OBJECT_PT_TMG_Scene_Effects_Panel_Color_M_Use_Curves,
+
     OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field, 
     OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Aperture, 
     OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Bokeh, 
@@ -99,6 +104,18 @@ classes = (
     OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Lighting,
     # OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Samples,
     OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Shadows,
+
+    ## Selected Object Panel
+    OBJECT_PT_TMG_Selected_Object_Panel,
+
+    ## Eevee 
+    OBJECT_PT_TMG_EEVEE_Light,
+    OBJECT_PT_TMG_EEVEE_Light_Distance,
+    OBJECT_PT_TMG_EEVEE_Light_Beam_Shape,
+
+    ## Cycles
+    OBJECT_PT_TMG_CYCLES_Light,
+    OBJECT_PT_TMG_CYCLES_Light_Beam_Shape,
     
     ## Viewport Panel
     OBJECT_PT_TMG_Viewport_Panel, 

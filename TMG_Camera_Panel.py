@@ -2,6 +2,8 @@ import bpy, sys, os
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty, IntProperty, FloatProperty, FloatVectorProperty, PointerProperty
 from bpy.types import Operator, Header
+from bpy_extras.node_utils import find_node_input
+from bl_ui.utils import PresetPanel
 
 
 active_dict = {
@@ -20,6 +22,121 @@ active_dict = {
     "cam_track_to" : False,
     "passepartout_alpha" : 0.5,
 }
+
+###### Blender Functions #################################################################
+
+# Adapt properties editor panel to display in node editor. We have to
+# copy the class rather than inherit due to the way bpy registration works.
+def node_panel(cls):
+    node_cls = type('NODE_' + cls.__name__, cls.__bases__, dict(cls.__dict__))
+
+    node_cls.bl_space_type = 'NODE_EDITOR'
+    node_cls.bl_region_type = 'UI'
+    node_cls.bl_category = "Options"
+    if hasattr(node_cls, 'bl_parent_id'):
+        node_cls.bl_parent_id = 'NODE_' + node_cls.bl_parent_id
+
+    return node_cls
+
+
+def get_device_type(context):
+    return context.preferences.addons[__package__].preferences.compute_device_type
+
+
+def use_cpu(context):
+    cscene = context.scene.cycles
+
+    return (get_device_type(context) == 'NONE' or cscene.device == 'CPU')
+
+
+def use_opencl(context):
+    cscene = context.scene.cycles
+
+    return (get_device_type(context) == 'OPENCL' and cscene.device == 'GPU')
+
+
+def use_cuda(context):
+    cscene = context.scene.cycles
+
+    return (get_device_type(context) == 'CUDA' and cscene.device == 'GPU')
+
+
+def use_optix(context):
+    cscene = context.scene.cycles
+
+    return (get_device_type(context) == 'OPTIX' and cscene.device == 'GPU')
+
+
+def use_branched_path(context):
+    cscene = context.scene.cycles
+
+    return (cscene.progressive == 'BRANCHED_PATH' and not use_optix(context))
+
+
+def use_sample_all_lights(context):
+    cscene = context.scene.cycles
+
+    return cscene.sample_all_lights_direct or cscene.sample_all_lights_indirect
+
+
+def show_device_active(context):
+    cscene = context.scene.cycles
+    if cscene.device != 'GPU':
+        return True
+    return context.preferences.addons[__package__].preferences.has_active_device()
+
+def show_optix_denoising(context):
+    # OptiX AI denoiser can be used when at least one device supports OptiX
+    return bool(context.preferences.addons[__package__].preferences.get_devices_for_type('OPTIX'))
+
+
+def draw_samples_info(layout, context):
+    cscene = context.scene.cycles
+    integrator = cscene.progressive
+
+    # Calculate sample values
+    if integrator == 'PATH':
+        aa = cscene.samples
+        if cscene.use_square_samples:
+            aa = aa * aa
+    else:
+        aa = cscene.aa_samples
+        d = cscene.diffuse_samples
+        g = cscene.glossy_samples
+        t = cscene.transmission_samples
+        ao = cscene.ao_samples
+        ml = cscene.mesh_light_samples
+        sss = cscene.subsurface_samples
+        vol = cscene.volume_samples
+
+        if cscene.use_square_samples:
+            aa = aa * aa
+            d = d * d
+            g = g * g
+            t = t * t
+            ao = ao * ao
+            ml = ml * ml
+            sss = sss * sss
+            vol = vol * vol
+
+    # Draw interface
+    # Do not draw for progressive, when Square Samples are disabled
+    if use_branched_path(context) or (cscene.use_square_samples and integrator == 'PATH'):
+        col = layout.column(align=True)
+        col.scale_y = 0.6
+        col.label(text="Total Samples:")
+        col.separator()
+        if integrator == 'PATH':
+            col.label(text="%s AA" % aa)
+        else:
+            col.label(text="%s AA, %s Diffuse, %s Glossy, %s Transmission" %
+                      (aa, d * aa, g * aa, t * aa))
+            col.separator()
+            col.label(text="%s AO, %s Mesh Light, %s Subsurface, %s Volume" %
+                      (ao * aa, ml * aa, sss * aa, vol * aa))
+
+
+###### TMG Functions #################################################################
 
 
 def _change_ob(self, context, _ob):
@@ -608,7 +725,6 @@ class OBJECT_PT_TMG_Camera_Panel_Name(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_camera_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
             
     def draw(self, context):
         scene = context.scene
@@ -637,7 +753,6 @@ class OBJECT_PT_TMG_Camera_Panel_Perspective(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_camera_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
             
     def draw(self, context):
         scene = context.scene
@@ -688,7 +803,6 @@ class OBJECT_PT_TMG_Constraints_Panel_Floor(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -781,7 +895,6 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -879,7 +992,6 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path_Spline_Scale(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_constraints_panel_follow_path"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -967,7 +1079,6 @@ class OBJECT_PT_TMG_Constraints_Panel_Track_To(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -1070,7 +1181,6 @@ class OBJECT_PT_TMG_Output_Panel_Image(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_output_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         scene = context.scene
@@ -1101,7 +1211,6 @@ class OBJECT_PT_TMG_Output_Panel_Image_Settings(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_output_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         scene = context.scene
@@ -1151,7 +1260,6 @@ class OBJECT_PT_TMG_Passes_Panel_Cryptomatte(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_passes_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -1200,7 +1308,6 @@ class OBJECT_PT_TMG_Passes_Panel_Data(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_passes_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -1272,7 +1379,6 @@ class OBJECT_PT_TMG_Passes_Panel_Effects(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_passes_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -1319,7 +1425,6 @@ class OBJECT_PT_TMG_Passes_Panel_Light(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_passes_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -1405,7 +1510,6 @@ class OBJECT_PT_TMG_Passes_Panel_Shader_AOV(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_passes_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -1475,7 +1579,6 @@ class OBJECT_PT_TMG_Render_Panel_Aspect(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         scene = context.scene
@@ -1500,7 +1603,6 @@ class OBJECT_PT_TMG_Render_Panel_Device(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_render_panel"
     COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -1537,7 +1639,6 @@ class OBJECT_PT_TMG_Render_Panel_Film(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         scene = context.scene
@@ -1572,7 +1673,6 @@ class OBJECT_PT_TMG_Render_Panel_Cycles_Light_Paths(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_render_panel"
     COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -1594,7 +1694,6 @@ class OBJECT_PT_TMG_Render_Panel_Cycles_Max_Bounces(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
     COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -1628,7 +1727,6 @@ class OBJECT_PT_TMG_Render_Panel_Cycles_Clamping(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
     COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -1656,7 +1754,6 @@ class OBJECT_PT_TMG_Render_Panel_Cycles_Caustics(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
     COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -1686,7 +1783,6 @@ class OBJECT_PT_TMG_Render_Panel_Cycles_Fast_GI_Approximation(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
     COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -1726,7 +1822,6 @@ class OBJECT_PT_TMG_Render_Panel_Performance(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         pass
@@ -1739,7 +1834,6 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Acceleration_Structure(bpy.types.Pa
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel_performance"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -1805,7 +1899,6 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Final_Render(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel_performance"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -1855,7 +1948,6 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Tiles(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel_performance"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -1912,7 +2004,6 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Threads(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel_performance"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -1962,7 +2053,6 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Viewport(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel_performance"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -2012,7 +2102,6 @@ class OBJECT_PT_TMG_Render_Panel_Resolution(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         scene = context.scene
@@ -2068,7 +2157,6 @@ class OBJECT_PT_TMG_Render_Panel_Sampling(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         pass      
@@ -2082,7 +2170,6 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Advanced(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_render_panel_sampling"
     COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -2163,7 +2250,6 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Denoising(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_render_panel_sampling"
     COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -2237,7 +2323,6 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Samples(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel_sampling"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         scene = context.scene
@@ -2264,7 +2349,6 @@ class OBJECT_PT_TMG_Render_Panel_Timeline(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_render_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         scene = context.scene
@@ -2334,7 +2418,6 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_AO(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -2398,7 +2481,6 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -2454,6 +2536,72 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
                 layout.active = False
 
 
+class OBJECT_PT_TMG_Scene_Effects_Panel_Color_M(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_color_m"
+    bl_label = "Color Management"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False  # No animation.
+
+        scene = context.scene
+        view = scene.view_settings
+
+        flow = layout.grid_flow(row_major=True, columns=0, even_columns=False, even_rows=False, align=True)
+
+        col = flow.column()
+        col.prop(scene.display_settings, "display_device")
+
+        col.separator()
+
+        col.prop(view, "view_transform")
+        col.prop(view, "look")
+
+        col = flow.column()
+        col.prop(view, "exposure")
+        col.prop(view, "gamma")
+
+        col.separator()
+
+        col.prop(scene.sequencer_colorspace_settings, "name", text="Sequencer")
+
+
+class OBJECT_PT_TMG_Scene_Effects_Panel_Color_M_Use_Curves(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_color_m_use_curves"
+    bl_label = "Use Curves"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_color_m"
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw_header(self, context):
+
+        scene = context.scene
+        view = scene.view_settings
+
+        self.layout.prop(view, "use_curve_mapping", text="")
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        view = scene.view_settings
+
+        layout.use_property_split = False
+        layout.use_property_decorate = False  # No animation.
+
+        layout.enabled = view.use_curve_mapping
+
+        layout.template_curve_mapping(view, "curve_mapping", type='COLOR', levels=True)
+
+
 class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_effects_panel_depth_of_field"
     bl_label = ""
@@ -2461,7 +2609,6 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -2505,7 +2652,6 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Aperture(bpy.types.Panel)
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_depth_of_field"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -2553,7 +2699,6 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Bokeh(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_depth_of_field"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -2606,7 +2751,6 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Motion_Blur(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -2653,7 +2797,6 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Screen_Space_Reflections(bpy.types.Panel
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -2721,7 +2864,6 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Shadows(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -2774,7 +2916,6 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Stereoscopy(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -2839,7 +2980,6 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Subsurface_Scattering(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -2891,7 +3031,6 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -2939,7 +3078,6 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Samples(bpy.types.Pane
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_volumetrics_eevee"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -3062,7 +3200,6 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Cycles(bpy.types.Panel):
     bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
     COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -3102,6 +3239,306 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Cycles(bpy.types.Panel):
             self.layout.active = False 
 
 
+class OBJECT_PT_TMG_Selected_Object_Panel(bpy.types.Panel):
+    bl_idname = 'OBJECT_PT_tmg_selected_object_panel'
+    bl_category = 'TMG Camera'
+    bl_label = 'Selected Object'
+    bl_context = "objectmode"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw(self, context):
+        pass
+
+
+class OBJECT_PT_TMG_EEVEE_Light(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_eevee_light"
+    bl_category = 'TMG Camera'
+    bl_label = "Light"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_selected_object_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+
+        if bpy.context.active_object and bpy.context.active_object.type == "LIGHT":
+            light = context.active_object.data
+        else:
+            light = None
+
+        return engine in cls.COMPAT_ENGINES and light
+
+    def draw(self, context):
+        layout = self.layout        
+
+        if bpy.context.active_object and bpy.context.active_object.type == "LIGHT":
+            light = context.active_object.data
+        else:
+            light = None
+
+        if light:
+            # Compact layout for node editor.
+            if self.bl_space_type == 'PROPERTIES':
+                layout.row().prop(light, "type", expand=True)
+                layout.use_property_split = True
+            else:
+                layout.use_property_split = True
+                layout.row().prop(light, "type")
+
+            col = layout.column()
+            col.prop(light, "color")
+            col.prop(light, "energy")
+
+            col.separator()
+
+            col.prop(light, "diffuse_factor", text="Diffuse")
+            col.prop(light, "specular_factor", text="Specular")
+            col.prop(light, "volume_factor", text="Volume")
+
+
+class OBJECT_PT_TMG_EEVEE_Light_Distance(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_eevee_light_distance"
+    bl_label = "Custom Distance"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_eevee_light"
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+
+        if bpy.context.active_object and bpy.context.active_object.type == "LIGHT":
+            if context.active_object.data.type != "SUN":
+                light = context.active_object.data
+            else:
+                light = None
+        else:
+            light = None
+
+        return engine in cls.COMPAT_ENGINES and light
+
+    # def draw_header(self, context):
+    #     if bpy.context.active_object and bpy.context.active_object.type == "LIGHT":
+    #         light = context.active_object.data
+    #     else:
+    #         light = None
+
+    #     if light:
+    #         layout = self.layout
+    #         layout.prop(light, "use_custom_distance", text="")
+
+    #         layout.active = light.use_custom_distance
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        if bpy.context.active_object and bpy.context.active_object.type == "LIGHT":
+            light = context.active_object.data
+        else:
+            light = None
+
+        if light:
+            layout.prop(light, "cutoff_distance", text="Distance")
+
+            # layout.active = light.use_custom_distance
+
+
+class OBJECT_PT_TMG_EEVEE_Light_Beam_Shape(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_eevee_light_beam_shape"
+    bl_label = "Beam Shape"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_eevee_light"
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+
+        if bpy.context.active_object and bpy.context.active_object.type == "LIGHT":    
+            light = context.active_object.data            
+        else:
+            light = None
+
+        return engine in cls.COMPAT_ENGINES and light
+
+    def draw(self, context):
+        scene = context.scene
+        rd = scene.render
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":                           
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False
+
+            if context.active_object.type == "LIGHT":        
+                light = context.active_object.data                
+            else:
+                light = None
+
+            if light:
+                if light.type == "SPOT":
+                    layout.prop(light, "shadow_soft_size", text="Radius")
+                    layout.prop(light, "spot_size", text="Size")
+                    layout.prop(light, "spot_blend", text="Blend", slider=True)
+                    layout.prop(light, "show_cone")
+                
+                if light.type == 'AREA':
+                    layout.prop(light, "shape")                    
+
+                    sub = layout.column(align=True)
+
+                    if light.shape in {'SQUARE', 'DISK'}:
+                        sub.prop(light, "size")
+                    elif light.shape in {'RECTANGLE', 'ELLIPSE'}:
+                        sub.prop(light, "size", text="Size X")
+                        sub.prop(light, "size_y", text="Y")
+
+                if light.type == 'POINT':
+                    layout.prop(light, "shadow_soft_size", text="Radius")
+
+                if light.type == 'SUN':
+                    layout.prop(light, "angle", text="Angle")
+            
+
+class OBJECT_PT_TMG_CYCLES_Light(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_TMG_cycles_light"
+    bl_category = 'TMG Camera'
+    bl_label = "Light"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_selected_object_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+    COMPAT_ENGINES = {'CYCLES'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+
+        if bpy.context.active_object and bpy.context.active_object.type == "LIGHT":
+            light = context.active_object.data
+        else:
+            light = None
+
+        return engine in cls.COMPAT_ENGINES and light
+
+    def draw(self, context):
+        layout = self.layout
+
+        if bpy.context.active_object and bpy.context.active_object.type == "LIGHT":
+            light = context.active_object.data
+        else:
+            light = None
+
+        if light:
+            clamp = light.cycles
+
+            if self.bl_space_type == 'PROPERTIES':
+                layout.row().prop(light, "type", expand=True)
+                layout.use_property_split = True
+            else:
+                layout.use_property_split = True
+                layout.row().prop(light, "type")
+
+            col = layout.column()
+
+            col.prop(light, "color")
+            col.prop(light, "energy")
+            col.separator()
+
+            if not (light.type == 'AREA' and clamp.is_portal):
+                sub = col.column()
+                if use_branched_path(context):
+                    subsub = sub.row(align=True)
+                    subsub.active = use_sample_all_lights(context)
+                    subsub.prop(clamp, "samples")
+                sub.prop(clamp, "max_bounces")
+
+            sub = col.column(align=True)
+            sub.active = not (light.type == 'AREA' and clamp.is_portal)
+            sub.prop(clamp, "cast_shadow")
+            sub.prop(clamp, "use_multiple_importance_sampling", text="Multiple Importance")
+
+            if light.type == 'AREA':
+                col.prop(clamp, "is_portal", text="Portal")
+
+
+class OBJECT_PT_TMG_CYCLES_Light_Beam_Shape(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_TMG_cycles_light_beam_shape"
+    bl_category = 'TMG Camera'
+    bl_label = "Beam Shape"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_context = "data"
+    bl_parent_id = "OBJECT_PT_TMG_cycles_light"
+    bl_options = {"DEFAULT_CLOSED"}
+    COMPAT_ENGINES = {'CYCLES'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+
+        if bpy.context.active_object and bpy.context.active_object.type == "LIGHT":
+            if bpy.context.active_object.data.type in {'SPOT', "AREA"}:
+                light = context.active_object.data
+            else:
+                light = None
+        else:
+            light = None
+
+        return engine in cls.COMPAT_ENGINES and light
+
+    def draw(self, context):
+        layout = self.layout
+
+        if bpy.context.active_object and bpy.context.active_object.type == "LIGHT":
+            light = context.active_object.data
+        else:
+            light = Noneroperty_split = True
+        layout.use_property_decorate = False
+
+        if light:
+            
+            layout.use_property_split = True
+            col = layout.column()
+
+            if light.type in {'POINT', 'SPOT'}:
+                col.prop(light, "shadow_soft_size", text="Radius")
+
+            if light.type == 'SUN':
+                col.prop(light, "angle")
+
+            if light.type == 'SPOT':
+                col.prop(light, "spot_size", text="Spot Size")
+                col.prop(light, "spot_blend", text="Blend", slider=True)
+                col.prop(light, "show_cone")
+            
+            if light.type == 'AREA':
+                # if light.type == 'AREA':
+                col.prop(light, "shape", text="Shape")
+                sub = col.column(align=True)
+
+                if light.shape in {'SQUARE', 'DISK'}:
+                    sub.prop(light, "size")
+                elif light.shape in {'RECTANGLE', 'ELLIPSE'}:
+                    sub.prop(light, "size", text="Size X")
+                    sub.prop(light, "size_y", text="Y")
+
+                col.prop(light, "spread", text="Spread")
+
+
 class OBJECT_PT_TMG_Viewport_Panel(bpy.types.Panel):
     bl_idname = 'OBJECT_PT_tmg_viewport_panel'
     bl_category = 'TMG Camera'
@@ -3122,7 +3559,6 @@ class OBJECT_PT_TMG_Viewport_Panel_Composition(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_viewport_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw_header(self, context):
         scene = context.scene
@@ -3178,7 +3614,6 @@ class OBJECT_PT_TMG_Viewport_Panel_Display(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_viewport_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         scene = context.scene
@@ -3219,7 +3654,6 @@ class OBJECT_PT_TMG_Viewport_Panel_User_Preferences(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_viewport_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         scene = context.scene
@@ -3253,7 +3687,6 @@ class OBJECT_PT_TMG_Viewport_Panel_View(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_viewport_panel"
     bl_options = {"DEFAULT_CLOSED"}
-#    bl_options = {'HIDE_HEADER'}
             
     def draw(self, context):
         scene = context.scene
