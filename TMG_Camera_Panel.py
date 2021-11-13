@@ -593,33 +593,25 @@ def _set_ob_name(self, value):
 
     if tmg_cam_vars.ob_name_lock:
         if ob.data and ob.data.name != value:
-            _set_ob_data_name(self, value)
-
-    try:
-        if self["ob_name"] != value:
-            self["ob_name"] = value
-    except:
-        return
+            ob.data.name = value
 
 
 def _get_ob_data_name(self):
-    if bpy.context.active_object.data != None:
-        return self.get("ob_name", bpy.context.active_object.data.name)
-    else:
-        return self.get("ob_name", "")
+    if bpy.context.active_object.data:
+        return self.get("ob_data_name", bpy.context.active_object.data.name)
 
 
 def _set_ob_data_name(self, value):
+    scene = bpy.context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
     ob = bpy.context.active_object
 
-    if ob.data and ob.data.name != value:
+    if ob.data.name != value:
         ob.data.name = value
 
-    try:
-        if self["ob_name"] != value:
-            self["ob_name"] = value
-    except:
-        return
+    if tmg_cam_vars.ob_name_lock:
+        if ob.data and ob.data.name != value:
+            ob.data.name = value
 
     
 class OBJECT_OT_Select_Camera(bpy.types.Operator):
@@ -1114,7 +1106,6 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path_Spline_Scale(bpy.types.Panel):
                         col.prop(tmg_cam_vars, 'curve_size_x', text='X')
                         col.prop(tmg_cam_vars, 'curve_size_y', text='Y')
                         col.prop(tmg_cam_vars, 'curve_size_z', text='Z')
-                        
             except:
                 cn = None
                 
@@ -3334,17 +3325,11 @@ class OBJECT_PT_TMG_S_OB_Name(bpy.types.Panel):
 
         # if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
         if bpy.context.active_object:
-            ob = context.active_object #########################################################################################
+            ob = context.active_object
         else:
             ob = None
 
         if ob:
-            # if ob.name != tmg_cam_vars.ob_name:
-            #     tmg_cam_vars.ob_name = ob.name
-            
-            # if ob.data.name != tmg_cam_vars.ob_data_name:
-            #     tmg_cam_vars.ob_data_name = ob.data.name
-            
             layout = layout.column()
             layout.prop(tmg_cam_vars, 'ob_name_lock')
             
