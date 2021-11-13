@@ -578,6 +578,49 @@ def _rename_camera_data(self, context):
         if camera.data.name != tmg_cam_vars.camera_data_name:
             camera.data.name = tmg_cam_vars.camera_data_name
     
+
+def _get_ob_name(self):
+    return self.get("ob_name", bpy.context.active_object.name)
+
+
+def _set_ob_name(self, value):
+    scene = bpy.context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    ob = bpy.context.active_object
+
+    if ob.name != value:
+        ob.name = value
+
+    if tmg_cam_vars.ob_name_lock:
+        if ob.data and ob.data.name != value:
+            _set_ob_data_name(self, value)
+
+    try:
+        if self["ob_name"] != value:
+            self["ob_name"] = value
+    except:
+        return
+
+
+def _get_ob_data_name(self):
+    if bpy.context.active_object.data != None:
+        return self.get("ob_name", bpy.context.active_object.data.name)
+    else:
+        return self.get("ob_name", "")
+
+
+def _set_ob_data_name(self, value):
+    ob = bpy.context.active_object
+
+    if ob.data and ob.data.name != value:
+        ob.data.name = value
+
+    try:
+        if self["ob_name"] != value:
+            self["ob_name"] = value
+    except:
+        return
+
     
 class OBJECT_OT_Select_Camera(bpy.types.Operator):
     """Select scene camera"""
@@ -628,6 +671,10 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     camera_name_lock : bpy.props.BoolProperty(name='Linked Name', default=True)
     camera_name : bpy.props.StringProperty(name='Object', default='Camera', update=_rename_camera)
     camera_data_name : bpy.props.StringProperty(name='Data', default='Camera', update=_rename_camera_data)
+
+    ob_name_lock : bpy.props.BoolProperty(name='Linked Name', default=True)
+    ob_name : bpy.props.StringProperty(name='Object', default='Object', set=_set_ob_name, get=_get_ob_name)
+    ob_data_name : bpy.props.StringProperty(name='Data', default='Object', set=_set_ob_data_name, get=_get_ob_data_name)
 
     render_slot : bpy.props.IntProperty(default=1, min=1, max=8, options={'ANIMATABLE'}, update=_set_render_slot)
     
@@ -2546,30 +2593,35 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Color_M(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
+        scene = context.scene
+        rd = scene.render
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        view = scene.view_settings
+
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False  # No animation.
 
-        scene = context.scene
-        view = scene.view_settings
 
-        flow = layout.grid_flow(row_major=True, columns=0, even_columns=False, even_rows=False, align=True)
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":  
+            flow = layout.grid_flow(row_major=True, columns=0, even_columns=False, even_rows=False, align=True)
 
-        col = flow.column()
-        col.prop(scene.display_settings, "display_device")
+            col = flow.column()
+            col.prop(scene.display_settings, "display_device")
 
-        col.separator()
+            col.separator()
 
-        col.prop(view, "view_transform")
-        col.prop(view, "look")
+            col.prop(view, "view_transform")
+            col.prop(view, "look")
 
-        col = flow.column()
-        col.prop(view, "exposure")
-        col.prop(view, "gamma")
+            col = flow.column()
+            col.prop(view, "exposure")
+            col.prop(view, "gamma")
 
-        col.separator()
+            col.separator()
 
-        col.prop(scene.sequencer_colorspace_settings, "name", text="Sequencer")
+            col.prop(scene.sequencer_colorspace_settings, "name", text="Sequencer")
 
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Color_M_Use_Curves(bpy.types.Panel):
@@ -2589,17 +2641,19 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Color_M_Use_Curves(bpy.types.Panel):
         self.layout.prop(view, "use_curve_mapping", text="")
 
     def draw(self, context):
-        layout = self.layout
-
         scene = context.scene
+        rd = scene.render
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
         view = scene.view_settings
 
+        layout = self.layout
         layout.use_property_split = False
         layout.use_property_decorate = False  # No animation.
 
-        layout.enabled = view.use_curve_mapping
-
-        layout.template_curve_mapping(view, "curve_mapping", type='COLOR', levels=True)
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout.enabled = view.use_curve_mapping
+            layout.template_curve_mapping(view, "curve_mapping", type='COLOR', levels=True)
 
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field(bpy.types.Panel):
@@ -3252,6 +3306,57 @@ class OBJECT_PT_TMG_Selected_Object_Panel(bpy.types.Panel):
         pass
 
 
+class OBJECT_PT_TMG_S_OB_Name(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_s_ob_name"
+    bl_category = 'TMG Camera'
+    bl_label = "Name"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_selected_object_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        if bpy.context.active_object:
+            ob = context.active_object
+        else:
+            ob = None
+        return ob
+
+    def draw(self, context):
+        scene = context.scene
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False 
+
+        # if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+        if bpy.context.active_object:
+            ob = context.active_object #########################################################################################
+        else:
+            ob = None
+
+        if ob:
+            # if ob.name != tmg_cam_vars.ob_name:
+            #     tmg_cam_vars.ob_name = ob.name
+            
+            # if ob.data.name != tmg_cam_vars.ob_data_name:
+            #     tmg_cam_vars.ob_data_name = ob.data.name
+            
+            layout = layout.column()
+            layout.prop(tmg_cam_vars, 'ob_name_lock')
+            
+            if tmg_cam_vars.ob_name_lock:
+                layout.prop(tmg_cam_vars, 'ob_name')
+            else:
+                layout.prop(tmg_cam_vars, 'ob_name')
+
+                if bpy.context.active_object.data != None:
+                    layout.prop(tmg_cam_vars, 'ob_data_name')
+
+
 class OBJECT_PT_TMG_EEVEE_Light(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_eevee_light"
     bl_category = 'TMG Camera'
@@ -3324,18 +3429,6 @@ class OBJECT_PT_TMG_EEVEE_Light_Distance(bpy.types.Panel):
 
         return engine in cls.COMPAT_ENGINES and light
 
-    # def draw_header(self, context):
-    #     if bpy.context.active_object and bpy.context.active_object.type == "LIGHT":
-    #         light = context.active_object.data
-    #     else:
-    #         light = None
-
-    #     if light:
-    #         layout = self.layout
-    #         layout.prop(light, "use_custom_distance", text="")
-
-    #         layout.active = light.use_custom_distance
-
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
@@ -3378,39 +3471,39 @@ class OBJECT_PT_TMG_EEVEE_Light_Beam_Shape(bpy.types.Panel):
         props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
         
-        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":                           
-            layout = self.layout
-            layout.use_property_split = True
-            layout.use_property_decorate = False
+        # if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":                           
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
 
-            if context.active_object.type == "LIGHT":        
-                light = context.active_object.data                
-            else:
-                light = None
+        if context.active_object.type == "LIGHT":        
+            light = context.active_object.data                
+        else:
+            light = None
 
-            if light:
-                if light.type == "SPOT":
-                    layout.prop(light, "shadow_soft_size", text="Radius")
-                    layout.prop(light, "spot_size", text="Size")
-                    layout.prop(light, "spot_blend", text="Blend", slider=True)
-                    layout.prop(light, "show_cone")
-                
-                if light.type == 'AREA':
-                    layout.prop(light, "shape")                    
+        if light:
+            if light.type == "SPOT":
+                layout.prop(light, "shadow_soft_size", text="Radius")
+                layout.prop(light, "spot_size", text="Size")
+                layout.prop(light, "spot_blend", text="Blend", slider=True)
+                layout.prop(light, "show_cone")
+            
+            if light.type == 'AREA':
+                layout.prop(light, "shape")                    
 
-                    sub = layout.column(align=True)
+                sub = layout.column(align=True)
 
-                    if light.shape in {'SQUARE', 'DISK'}:
-                        sub.prop(light, "size")
-                    elif light.shape in {'RECTANGLE', 'ELLIPSE'}:
-                        sub.prop(light, "size", text="Size X")
-                        sub.prop(light, "size_y", text="Y")
+                if light.shape in {'SQUARE', 'DISK'}:
+                    sub.prop(light, "size")
+                elif light.shape in {'RECTANGLE', 'ELLIPSE'}:
+                    sub.prop(light, "size", text="Size X")
+                    sub.prop(light, "size_y", text="Y")
 
-                if light.type == 'POINT':
-                    layout.prop(light, "shadow_soft_size", text="Radius")
+            if light.type == 'POINT':
+                layout.prop(light, "shadow_soft_size", text="Radius")
 
-                if light.type == 'SUN':
-                    layout.prop(light, "angle", text="Angle")
+            if light.type == 'SUN':
+                layout.prop(light, "angle", text="Angle")
             
 
 class OBJECT_PT_TMG_CYCLES_Light(bpy.types.Panel):

@@ -107,6 +107,7 @@ classes = (
 
     ## Selected Object Panel
     OBJECT_PT_TMG_Selected_Object_Panel,
+    OBJECT_PT_TMG_S_OB_Name,
 
     ## Eevee 
     OBJECT_PT_TMG_EEVEE_Light,
