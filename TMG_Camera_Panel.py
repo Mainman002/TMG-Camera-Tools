@@ -4,6 +4,8 @@ from bpy.props import StringProperty, BoolProperty, EnumProperty, IntProperty, F
 from bpy.types import Operator, Header
 from bpy_extras.node_utils import find_node_input
 from bl_ui.utils import PresetPanel
+from random import uniform
+# from math import 
 
 
 active_dict = {
@@ -657,6 +659,65 @@ def _update_const_res_y(self, context):
     scene.render.resolution_y = int( tmg_cam_vars.const_res_y )
 
 
+class OBJECT_OT_Randomize_Selected_Light(bpy.types.Operator):
+    """Randomizes selected light values"""
+    bl_idname = 'object.tmg_randomize_light'
+    bl_label = 'Randomize'
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        # ob = context.active_object
+        objs = bpy.context.selected_objects
+
+        light_types = ["POINT", "SUN", "SPOT", "AREA"]
+
+        for ob in objs:
+            if ob and ob.type == "LIGHT":
+                if tmg_cam_vars.light_random_type:
+                    ob.data.type = light_types[int( uniform(0, 4) )]
+
+                light = ob.data
+
+                ## Check color lock
+                if tmg_cam_vars.light_random_color:
+                    light.color.r = uniform(0, 1)
+                    light.color.g = uniform(0, 1)
+                    light.color.b = uniform(0, 1)
+                    
+                ## Check energy lock
+                if tmg_cam_vars.light_random_energy:
+                    light.energy = uniform(50, 150)
+                
+                ## Check diffuse lock
+                if tmg_cam_vars.light_random_diffuse:
+                    light.diffuse_factor = uniform(0.1, 5)
+                
+                ## Check specular lock
+                if tmg_cam_vars.light_random_specular:
+                    light.specular_factor = uniform(0.1, 5)
+                    
+                ## Check volume lock
+                if tmg_cam_vars.light_random_volume:
+                    light.volume_factor = uniform(0.1, 5)
+                    
+                ## Check size lock
+                if tmg_cam_vars.light_random_size:
+                    if ob.data.type == "POINT":
+                        light.shadow_soft_size = uniform(0.125, 10)
+                        
+                    if ob.data.type == "AREA":
+                        light.size = uniform(0.125, 10)
+                        
+                    if ob.data.type == "SPOT":
+                        light.shadow_soft_size = uniform(0.125, 10)
+                        light.spot_size = uniform(0.5, 3.0)
+                        light.spot_blend = uniform(0.5, 1.0)
+
+        return {'FINISHED'}
+
+
 class TMG_Camera_Properties(bpy.types.PropertyGroup):
     scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, poll=_tmg_search_cameras, description='Scene active camera', update=_change_scene_camera)
     
@@ -674,6 +735,14 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     curve_size_x : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
     curve_size_y : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
     curve_size_z : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
+
+    light_random_color : bpy.props.BoolProperty(name='Color', default=False)
+    light_random_diffuse : bpy.props.BoolProperty(name='Diffuse', default=False)
+    light_random_energy : bpy.props.BoolProperty(name='Energy', default=False)
+    light_random_size : bpy.props.BoolProperty(name='Size', default=False)
+    light_random_specular : bpy.props.BoolProperty(name='Specular', default=False)
+    light_random_type : bpy.props.BoolProperty(name='Type', default=False)
+    light_random_volume : bpy.props.BoolProperty(name='Volume', default=False)
 
     res_x : bpy.props.FloatProperty(default=1920, subtype='PIXEL', min=4, step=15, precision=0, update=_update_res_x, description='Sets res_x Custom_Property')
     res_y : bpy.props.FloatProperty(default=1080, subtype='PIXEL', min=4, step=15, precision=0, update=_update_res_y, description='Sets res_y Custom_Property')
@@ -3489,10 +3558,10 @@ class OBJECT_PT_TMG_EEVEE_Light_Beam_Shape(bpy.types.Panel):
 
             if light.type == 'SUN':
                 layout.prop(light, "angle", text="Angle")
-            
+
 
 class OBJECT_PT_TMG_CYCLES_Light(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_TMG_cycles_light"
+    bl_idname = "OBJECT_PT_tmg_cycles_light"
     bl_category = 'TMG Camera'
     bl_label = "Light"
     bl_space_type = "VIEW_3D"
@@ -3554,13 +3623,13 @@ class OBJECT_PT_TMG_CYCLES_Light(bpy.types.Panel):
 
 
 class OBJECT_PT_TMG_CYCLES_Light_Beam_Shape(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_TMG_cycles_light_beam_shape"
+    bl_idname = "OBJECT_PT_tmg_cycles_light_beam_shape"
     bl_category = 'TMG Camera'
     bl_label = "Beam Shape"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_context = "data"
-    bl_parent_id = "OBJECT_PT_TMG_cycles_light"
+    bl_parent_id = "OBJECT_PT_tmg_cycles_light"
     bl_options = {"DEFAULT_CLOSED"}
     COMPAT_ENGINES = {'CYCLES'}
 
@@ -3615,6 +3684,96 @@ class OBJECT_PT_TMG_CYCLES_Light_Beam_Shape(bpy.types.Panel):
                     sub.prop(light, "size_y", text="Y")
 
                 col.prop(light, "spread", text="Spread")
+
+
+class OBJECT_PT_TMG_Light_Randomize(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_light_randomize"
+    bl_category = 'TMG Camera'
+    bl_label = "Randomize"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_selected_object_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        # engine = context.scene.render.engine
+        light = None
+
+        for ob in bpy.context.selected_objects:
+            if ob.type == "LIGHT":
+                light = ob.data
+            else:
+                light = None
+
+        return light
+
+    def draw(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        light = None
+
+        for ob in bpy.context.selected_objects:
+            if ob.type == "LIGHT":
+                light = ob.data
+            else:
+                light = None
+
+        if light:
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False 
+
+            layout.operator("object.tmg_randomize_light", text="Randomize Light")
+
+
+class OBJECT_PT_TMG_Light_Randomize_Options(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_light_randomize_options"
+    bl_category = 'TMG Camera'
+    bl_label = "Options"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_light_randomize"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        # engine = context.scene.render.engine
+        light = None
+
+        for ob in bpy.context.selected_objects:
+            if ob.type == "LIGHT":
+                light = ob.data
+            else:
+                light = None
+
+        return light
+
+    def draw(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        light = None
+
+        for ob in bpy.context.selected_objects:
+            if ob.type == "LIGHT":
+                light = ob.data
+            else:
+                light = None
+
+        if light:
+            # layout = self.layout
+            layout = self.layout.column(align=True)
+            layout.use_property_split = True
+            layout.use_property_decorate = False 
+
+
+            layout.prop(tmg_cam_vars, "light_random_color")
+            layout.prop(tmg_cam_vars, "light_random_diffuse")
+            layout.prop(tmg_cam_vars, "light_random_energy")
+            layout.prop(tmg_cam_vars, "light_random_size")
+            layout.prop(tmg_cam_vars, "light_random_specular")
+            layout.prop(tmg_cam_vars, "light_random_type")
+            layout.prop(tmg_cam_vars, "light_random_volume")
 
 
 class OBJECT_PT_TMG_Viewport_Panel(bpy.types.Panel):
