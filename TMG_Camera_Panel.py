@@ -3697,29 +3697,26 @@ class OBJECT_PT_TMG_Light_Randomize(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        # engine = context.scene.render.engine
-        light = None
+        obs = []
 
         for ob in bpy.context.selected_objects:
             if ob.type == "LIGHT":
-                light = ob.data
-            else:
-                light = None
+                obs.append(ob)
 
-        return light
+        for light in obs:
+            return light.data
 
     def draw(self, context):
         scene = context.scene
         tmg_cam_vars = scene.tmg_cam_vars
-        light = None
+        
+        obs = []
 
         for ob in bpy.context.selected_objects:
             if ob.type == "LIGHT":
-                light = ob.data
-            else:
-                light = None
+                obs.append(ob)
 
-        if light:
+        if len(obs) > 0:
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False 
@@ -3738,30 +3735,25 @@ class OBJECT_PT_TMG_Light_Randomize_Options(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        # engine = context.scene.render.engine
-        light = None
+        obs = []
 
         for ob in bpy.context.selected_objects:
             if ob.type == "LIGHT":
-                light = ob.data
-            else:
-                light = None
+                obs.append(ob)
 
-        return light
+        for light in obs:
+            return light.data
 
     def draw(self, context):
         scene = context.scene
         tmg_cam_vars = scene.tmg_cam_vars
-        light = None
+        obs = []
 
         for ob in bpy.context.selected_objects:
             if ob.type == "LIGHT":
-                light = ob.data
-            else:
-                light = None
+                obs.append(ob)
 
-        if light:
-            # layout = self.layout
+        if len(obs) > 0:
             layout = self.layout.column(align=True)
             layout.use_property_split = True
             layout.use_property_decorate = False 
