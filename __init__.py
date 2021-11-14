@@ -139,6 +139,7 @@ classes = (
     OBJECT_OT_Randomize_Selected_Light,
     OBJECT_OT_Remove_Constraint,
     OBJECT_OT_Select_Camera,
+    # OBJECT_OT_Select_Object,
 )
 
 def register():
