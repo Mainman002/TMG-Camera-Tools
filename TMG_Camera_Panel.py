@@ -4,6 +4,8 @@ from bpy.props import StringProperty, BoolProperty, EnumProperty, IntProperty, F
 from bpy.types import Operator, Header
 from bpy_extras.node_utils import find_node_input
 from bl_ui.utils import PresetPanel
+from random import uniform
+# from math import 
 
 
 active_dict = {
@@ -578,6 +580,41 @@ def _rename_camera_data(self, context):
         if camera.data.name != tmg_cam_vars.camera_data_name:
             camera.data.name = tmg_cam_vars.camera_data_name
     
+
+def _get_ob_name(self):
+    return self.get("ob_name", bpy.context.active_object.name)
+
+
+def _set_ob_name(self, value):
+    scene = bpy.context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    ob = bpy.context.active_object
+
+    if ob.name != value:
+        ob.name = value
+
+    if tmg_cam_vars.ob_name_lock:
+        if ob.data and ob.data.name != value:
+            ob.data.name = value
+
+
+def _get_ob_data_name(self):
+    if bpy.context.active_object.data:
+        return self.get("ob_data_name", bpy.context.active_object.data.name)
+
+
+def _set_ob_data_name(self, value):
+    scene = bpy.context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    ob = bpy.context.active_object
+
+    if ob.data.name != value:
+        ob.data.name = value
+
+    if tmg_cam_vars.ob_name_lock:
+        if ob.data and ob.data.name != value:
+            ob.data.name = value
+
     
 class OBJECT_OT_Select_Camera(bpy.types.Operator):
     """Select scene camera"""
@@ -622,6 +659,65 @@ def _update_const_res_y(self, context):
     scene.render.resolution_y = int( tmg_cam_vars.const_res_y )
 
 
+class OBJECT_OT_Randomize_Selected_Light(bpy.types.Operator):
+    """Randomizes selected light values"""
+    bl_idname = 'object.tmg_randomize_light'
+    bl_label = 'Randomize'
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        # ob = context.active_object
+        objs = bpy.context.selected_objects
+
+        light_types = ["POINT", "SUN", "SPOT", "AREA"]
+
+        for ob in objs:
+            if ob and ob.type == "LIGHT":
+                if tmg_cam_vars.light_random_type:
+                    ob.data.type = light_types[int( uniform(0, 4) )]
+
+                light = ob.data
+
+                ## Check color lock
+                if tmg_cam_vars.light_random_color:
+                    light.color.r = uniform(0, 1)
+                    light.color.g = uniform(0, 1)
+                    light.color.b = uniform(0, 1)
+                    
+                ## Check energy lock
+                if tmg_cam_vars.light_random_energy:
+                    light.energy = uniform(50, 150)
+                
+                ## Check diffuse lock
+                if tmg_cam_vars.light_random_diffuse:
+                    light.diffuse_factor = uniform(0.1, 5)
+                
+                ## Check specular lock
+                if tmg_cam_vars.light_random_specular:
+                    light.specular_factor = uniform(0.1, 5)
+                    
+                ## Check volume lock
+                if tmg_cam_vars.light_random_volume:
+                    light.volume_factor = uniform(0.1, 5)
+                    
+                ## Check size lock
+                if tmg_cam_vars.light_random_size:
+                    if ob.data.type == "POINT":
+                        light.shadow_soft_size = uniform(0.125, 10)
+                        
+                    if ob.data.type == "AREA":
+                        light.size = uniform(0.125, 10)
+                        
+                    if ob.data.type == "SPOT":
+                        light.shadow_soft_size = uniform(0.125, 10)
+                        light.spot_size = uniform(0.5, 3.0)
+                        light.spot_blend = uniform(0.5, 1.0)
+
+        return {'FINISHED'}
+
+
 class TMG_Camera_Properties(bpy.types.PropertyGroup):
     scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, poll=_tmg_search_cameras, description='Scene active camera', update=_change_scene_camera)
     
@@ -629,12 +725,24 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     camera_name : bpy.props.StringProperty(name='Object', default='Camera', update=_rename_camera)
     camera_data_name : bpy.props.StringProperty(name='Data', default='Camera', update=_rename_camera_data)
 
+    ob_name_lock : bpy.props.BoolProperty(name='Linked Name', default=True)
+    ob_name : bpy.props.StringProperty(name='Object', default='Object', set=_set_ob_name, get=_get_ob_name)
+    ob_data_name : bpy.props.StringProperty(name='Data', default='Object', set=_set_ob_data_name, get=_get_ob_data_name)
+
     render_slot : bpy.props.IntProperty(default=1, min=1, max=8, options={'ANIMATABLE'}, update=_set_render_slot)
     
     curve_lock_scale : bpy.props.BoolProperty(default=False)
     curve_size_x : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
     curve_size_y : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
     curve_size_z : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
+
+    light_random_color : bpy.props.BoolProperty(name='Color', default=False)
+    light_random_diffuse : bpy.props.BoolProperty(name='Diffuse', default=False)
+    light_random_energy : bpy.props.BoolProperty(name='Energy', default=False)
+    light_random_size : bpy.props.BoolProperty(name='Size', default=False)
+    light_random_specular : bpy.props.BoolProperty(name='Specular', default=False)
+    light_random_type : bpy.props.BoolProperty(name='Type', default=False)
+    light_random_volume : bpy.props.BoolProperty(name='Volume', default=False)
 
     res_x : bpy.props.FloatProperty(default=1920, subtype='PIXEL', min=4, step=15, precision=0, update=_update_res_x, description='Sets res_x Custom_Property')
     res_y : bpy.props.FloatProperty(default=1080, subtype='PIXEL', min=4, step=15, precision=0, update=_update_res_y, description='Sets res_y Custom_Property')
@@ -1067,7 +1175,6 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path_Spline_Scale(bpy.types.Panel):
                         col.prop(tmg_cam_vars, 'curve_size_x', text='X')
                         col.prop(tmg_cam_vars, 'curve_size_y', text='Y')
                         col.prop(tmg_cam_vars, 'curve_size_z', text='Z')
-                        
             except:
                 cn = None
                 
@@ -2546,30 +2653,35 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Color_M(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
+        scene = context.scene
+        rd = scene.render
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        view = scene.view_settings
+
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False  # No animation.
 
-        scene = context.scene
-        view = scene.view_settings
 
-        flow = layout.grid_flow(row_major=True, columns=0, even_columns=False, even_rows=False, align=True)
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":  
+            flow = layout.grid_flow(row_major=True, columns=0, even_columns=False, even_rows=False, align=True)
 
-        col = flow.column()
-        col.prop(scene.display_settings, "display_device")
+            col = flow.column()
+            col.prop(scene.display_settings, "display_device")
 
-        col.separator()
+            col.separator()
 
-        col.prop(view, "view_transform")
-        col.prop(view, "look")
+            col.prop(view, "view_transform")
+            col.prop(view, "look")
 
-        col = flow.column()
-        col.prop(view, "exposure")
-        col.prop(view, "gamma")
+            col = flow.column()
+            col.prop(view, "exposure")
+            col.prop(view, "gamma")
 
-        col.separator()
+            col.separator()
 
-        col.prop(scene.sequencer_colorspace_settings, "name", text="Sequencer")
+            col.prop(scene.sequencer_colorspace_settings, "name", text="Sequencer")
 
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Color_M_Use_Curves(bpy.types.Panel):
@@ -2589,17 +2701,19 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Color_M_Use_Curves(bpy.types.Panel):
         self.layout.prop(view, "use_curve_mapping", text="")
 
     def draw(self, context):
-        layout = self.layout
-
         scene = context.scene
+        rd = scene.render
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
         view = scene.view_settings
 
+        layout = self.layout
         layout.use_property_split = False
         layout.use_property_decorate = False  # No animation.
 
-        layout.enabled = view.use_curve_mapping
-
-        layout.template_curve_mapping(view, "curve_mapping", type='COLOR', levels=True)
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout.enabled = view.use_curve_mapping
+            layout.template_curve_mapping(view, "curve_mapping", type='COLOR', levels=True)
 
 
 class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field(bpy.types.Panel):
@@ -3252,6 +3366,51 @@ class OBJECT_PT_TMG_Selected_Object_Panel(bpy.types.Panel):
         pass
 
 
+class OBJECT_PT_TMG_S_OB_Name(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_s_ob_name"
+    bl_category = 'TMG Camera'
+    bl_label = "Name"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_selected_object_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        if bpy.context.active_object:
+            ob = context.active_object
+        else:
+            ob = None
+        return ob
+
+    def draw(self, context):
+        scene = context.scene
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False 
+
+        # if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+        if bpy.context.active_object:
+            ob = context.active_object
+        else:
+            ob = None
+
+        if ob:
+            layout = layout.column()
+            layout.prop(tmg_cam_vars, 'ob_name_lock')
+            
+            if tmg_cam_vars.ob_name_lock:
+                layout.prop(tmg_cam_vars, 'ob_name')
+            else:
+                layout.prop(tmg_cam_vars, 'ob_name')
+
+                if bpy.context.active_object.data != None:
+                    layout.prop(tmg_cam_vars, 'ob_data_name')
+
+
 class OBJECT_PT_TMG_EEVEE_Light(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_eevee_light"
     bl_category = 'TMG Camera'
@@ -3324,18 +3483,6 @@ class OBJECT_PT_TMG_EEVEE_Light_Distance(bpy.types.Panel):
 
         return engine in cls.COMPAT_ENGINES and light
 
-    # def draw_header(self, context):
-    #     if bpy.context.active_object and bpy.context.active_object.type == "LIGHT":
-    #         light = context.active_object.data
-    #     else:
-    #         light = None
-
-    #     if light:
-    #         layout = self.layout
-    #         layout.prop(light, "use_custom_distance", text="")
-
-    #         layout.active = light.use_custom_distance
-
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
@@ -3378,43 +3525,43 @@ class OBJECT_PT_TMG_EEVEE_Light_Beam_Shape(bpy.types.Panel):
         props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
         
-        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":                           
-            layout = self.layout
-            layout.use_property_split = True
-            layout.use_property_decorate = False
+        # if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":                           
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
 
-            if context.active_object.type == "LIGHT":        
-                light = context.active_object.data                
-            else:
-                light = None
+        if context.active_object.type == "LIGHT":        
+            light = context.active_object.data                
+        else:
+            light = None
 
-            if light:
-                if light.type == "SPOT":
-                    layout.prop(light, "shadow_soft_size", text="Radius")
-                    layout.prop(light, "spot_size", text="Size")
-                    layout.prop(light, "spot_blend", text="Blend", slider=True)
-                    layout.prop(light, "show_cone")
-                
-                if light.type == 'AREA':
-                    layout.prop(light, "shape")                    
-
-                    sub = layout.column(align=True)
-
-                    if light.shape in {'SQUARE', 'DISK'}:
-                        sub.prop(light, "size")
-                    elif light.shape in {'RECTANGLE', 'ELLIPSE'}:
-                        sub.prop(light, "size", text="Size X")
-                        sub.prop(light, "size_y", text="Y")
-
-                if light.type == 'POINT':
-                    layout.prop(light, "shadow_soft_size", text="Radius")
-
-                if light.type == 'SUN':
-                    layout.prop(light, "angle", text="Angle")
+        if light:
+            if light.type == "SPOT":
+                layout.prop(light, "shadow_soft_size", text="Radius")
+                layout.prop(light, "spot_size", text="Size")
+                layout.prop(light, "spot_blend", text="Blend", slider=True)
+                layout.prop(light, "show_cone")
             
+            if light.type == 'AREA':
+                layout.prop(light, "shape")                    
+
+                sub = layout.column(align=True)
+
+                if light.shape in {'SQUARE', 'DISK'}:
+                    sub.prop(light, "size")
+                elif light.shape in {'RECTANGLE', 'ELLIPSE'}:
+                    sub.prop(light, "size", text="Size X")
+                    sub.prop(light, "size_y", text="Y")
+
+            if light.type == 'POINT':
+                layout.prop(light, "shadow_soft_size", text="Radius")
+
+            if light.type == 'SUN':
+                layout.prop(light, "angle", text="Angle")
+
 
 class OBJECT_PT_TMG_CYCLES_Light(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_TMG_cycles_light"
+    bl_idname = "OBJECT_PT_tmg_cycles_light"
     bl_category = 'TMG Camera'
     bl_label = "Light"
     bl_space_type = "VIEW_3D"
@@ -3476,13 +3623,13 @@ class OBJECT_PT_TMG_CYCLES_Light(bpy.types.Panel):
 
 
 class OBJECT_PT_TMG_CYCLES_Light_Beam_Shape(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_TMG_cycles_light_beam_shape"
+    bl_idname = "OBJECT_PT_tmg_cycles_light_beam_shape"
     bl_category = 'TMG Camera'
     bl_label = "Beam Shape"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_context = "data"
-    bl_parent_id = "OBJECT_PT_TMG_cycles_light"
+    bl_parent_id = "OBJECT_PT_tmg_cycles_light"
     bl_options = {"DEFAULT_CLOSED"}
     COMPAT_ENGINES = {'CYCLES'}
 
@@ -3537,6 +3684,88 @@ class OBJECT_PT_TMG_CYCLES_Light_Beam_Shape(bpy.types.Panel):
                     sub.prop(light, "size_y", text="Y")
 
                 col.prop(light, "spread", text="Spread")
+
+
+class OBJECT_PT_TMG_Light_Randomize(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_light_randomize"
+    bl_category = 'TMG Camera'
+    bl_label = "Randomize"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_selected_object_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        obs = []
+
+        for ob in bpy.context.selected_objects:
+            if ob.type == "LIGHT":
+                obs.append(ob)
+
+        for light in obs:
+            return light.data
+
+    def draw(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        obs = []
+
+        for ob in bpy.context.selected_objects:
+            if ob.type == "LIGHT":
+                obs.append(ob)
+
+        if len(obs) > 0:
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False 
+
+            layout.operator("object.tmg_randomize_light", text="Randomize Light")
+
+
+class OBJECT_PT_TMG_Light_Randomize_Options(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_light_randomize_options"
+    bl_category = 'TMG Camera'
+    bl_label = "Options"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_light_randomize"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        obs = []
+
+        for ob in bpy.context.selected_objects:
+            if ob.type == "LIGHT":
+                obs.append(ob)
+
+        for light in obs:
+            return light.data
+
+    def draw(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+        obs = []
+
+        for ob in bpy.context.selected_objects:
+            if ob.type == "LIGHT":
+                obs.append(ob)
+
+        if len(obs) > 0:
+            layout = self.layout.column(align=True)
+            layout.use_property_split = True
+            layout.use_property_decorate = False 
+
+
+            layout.prop(tmg_cam_vars, "light_random_color")
+            layout.prop(tmg_cam_vars, "light_random_diffuse")
+            layout.prop(tmg_cam_vars, "light_random_energy")
+            layout.prop(tmg_cam_vars, "light_random_size")
+            layout.prop(tmg_cam_vars, "light_random_specular")
+            layout.prop(tmg_cam_vars, "light_random_type")
+            layout.prop(tmg_cam_vars, "light_random_volume")
 
 
 class OBJECT_PT_TMG_Viewport_Panel(bpy.types.Panel):

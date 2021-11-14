@@ -15,6 +15,10 @@ from bl_ui.utils import PresetPanel
 # Extra online resources used in this script
 # https://blender.stackexchange.com/questions/155515/how-do-a-create-a-foldout-ui-panel
 
+# Thank you Curtis Holt for the random light color code snippets
+# That's changed my workflow in weird, fun ways :)
+# His video found here -> https://youtu.be/YyxirS699Zs
+
 # Thank you all that download, suggest, and request features
 # As well as the whole Blender community. You're all epic :)
 
@@ -107,6 +111,7 @@ classes = (
 
     ## Selected Object Panel
     OBJECT_PT_TMG_Selected_Object_Panel,
+    OBJECT_PT_TMG_S_OB_Name,
 
     ## Eevee 
     OBJECT_PT_TMG_EEVEE_Light,
@@ -117,6 +122,10 @@ classes = (
     OBJECT_PT_TMG_CYCLES_Light,
     OBJECT_PT_TMG_CYCLES_Light_Beam_Shape,
     
+    ## Randomize Selected Lights
+    OBJECT_PT_TMG_Light_Randomize,
+    OBJECT_PT_TMG_Light_Randomize_Options,
+
     ## Viewport Panel
     OBJECT_PT_TMG_Viewport_Panel, 
     OBJECT_PT_TMG_Viewport_Panel_Composition, 
@@ -127,6 +136,7 @@ classes = (
     ## Extra Operators
     OBJECT_OT_Add_Constraint, 
     OBJECT_OT_Move_Constraint, 
+    OBJECT_OT_Randomize_Selected_Light,
     OBJECT_OT_Remove_Constraint,
     OBJECT_OT_Select_Camera,
 )
