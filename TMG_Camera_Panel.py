@@ -192,6 +192,7 @@ def _change_camera_presets(self, context):
 #        active_dict["fStop"] = 2.8
     
     active_dict["fStop"] = camera.data.dof.aperture_fstop
+    _set_custom_property( camera, "sensor_profile", int(tmg_cam_vars.cam_sensor_format) )
     _set_cam_values(self, context)
 
 
@@ -356,6 +357,11 @@ def _change_scene_camera(self, context):
             pass
         else:
             camera["res_mode"] = 0
+
+        if "sensor_profile" in camera:
+            pass
+        else:
+            camera["sensor_profile"] = 0
         
         camera.data.passepartout_alpha = tmg_cam_vars.camera_passepartout_alpha
         camera.data.show_passepartout = tmg_cam_vars.use_camera_passepartout_alpha
@@ -373,6 +379,7 @@ def _change_scene_camera(self, context):
             tmg_cam_vars.res_x = _get_custom_property(camera, "res_x")
             tmg_cam_vars.res_y = _get_custom_property(camera, "res_y")
             
+        tmg_cam_vars.cam_sensor_format = str( _get_custom_property(camera, "sensor_profile") )
         tmg_cam_vars.cam_resolution_presets = str( _get_custom_property(camera, "resolution") )
         tmg_cam_vars.cam_resolution_mode_presets = str( _get_custom_property(camera, "res_mode") )
         
@@ -628,6 +635,18 @@ class OBJECT_OT_Select_Camera(bpy.types.Operator):
         _change_ob(self, context, camera)
         return {'FINISHED'}
     
+
+# class OBJECT_OT_Select_Object(bpy.types.Operator):
+#     """Select scene object"""
+#     bl_idname = 'object.tmg_select_object'
+#     bl_label = 'Select Object'
+
+#     Object : bpy.props.PointerProperty(name='Active Object', description='Scene active object')
+    
+#     def execute(self, context):
+#         _change_ob(self, context, self.Object)
+#         return {'FINISHED'}
+
 
 def _update_res_x(self, context):
     scene = context.scene
