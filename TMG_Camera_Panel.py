@@ -690,12 +690,24 @@ class OBJECT_OT_Randomize_Selected_Light(bpy.types.Operator):
         # ob = context.active_object
         objs = bpy.context.selected_objects
 
-        light_types = ["POINT", "SUN", "SPOT", "AREA"]
+        light_types = []
+
+        if tmg_cam_vars.light_random_type_point:
+            light_types.append("POINT")
+
+        if tmg_cam_vars.light_random_type_sun:
+            light_types.append("SUN")
+
+        if tmg_cam_vars.light_random_type_spot:
+            light_types.append("SPOT")
+
+        if tmg_cam_vars.light_random_type_area:
+            light_types.append("AREA")
 
         for ob in objs:
             if ob and ob.type == "LIGHT":
-                if tmg_cam_vars.light_random_type:
-                    ob.data.type = light_types[int( uniform(0, 4) )]
+                if len(light_types) > 0:
+                    ob.data.type = light_types[int( uniform(0, len(light_types)) )]
 
                 light = ob.data
 
@@ -755,13 +767,31 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     curve_size_y : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
     curve_size_z : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
 
+    ## Randomize Variables
+    ## Red
+    # light_random_color_r_min : bpy.props.FloatProperty(name='R Min', default=0.0, soft_min=0.0, soft_max=1.0)
+    # light_random_color_r_max : bpy.props.FloatProperty(name='R Max', default=1.0, soft_min=0.0, soft_max=1.0)
+
+    ## Green
+    # light_random_color_g_min : bpy.props.FloatProperty(name='G Min', default=0.0, soft_min=0.0, soft_max=1.0)
+    # light_random_color_g_max : bpy.props.FloatProperty(name='G Max', default=1.0, soft_min=0.0, soft_max=1.0)
+
+    ## Blue
+    # light_random_color_b_min : bpy.props.FloatProperty(name='B Min', default=0.0, soft_min=0.0, soft_max=1.0)
+    # light_random_color_b_max : bpy.props.FloatProperty(name='B Max', default=1.0, soft_min=0.0, soft_max=1.0)
+
     light_random_color : bpy.props.BoolProperty(name='Color', default=False)
     light_random_diffuse : bpy.props.BoolProperty(name='Diffuse', default=False)
     light_random_energy : bpy.props.BoolProperty(name='Energy', default=False)
     light_random_size : bpy.props.BoolProperty(name='Size', default=False)
     light_random_specular : bpy.props.BoolProperty(name='Specular', default=False)
-    light_random_type : bpy.props.BoolProperty(name='Type', default=False)
+    # light_random_type : bpy.props.BoolProperty(name='Type', default=False)
     light_random_volume : bpy.props.BoolProperty(name='Volume', default=False)
+
+    light_random_type_point : bpy.props.BoolProperty(name='Point', default=False)
+    light_random_type_sun : bpy.props.BoolProperty(name='Sun', default=False)
+    light_random_type_spot : bpy.props.BoolProperty(name='Spot', default=False)
+    light_random_type_area : bpy.props.BoolProperty(name='Area', default=False)
 
     res_x : bpy.props.FloatProperty(default=1920, subtype='PIXEL', min=4, step=15, precision=0, update=_update_res_x, description='Sets res_x Custom_Property')
     res_y : bpy.props.FloatProperty(default=1080, subtype='PIXEL', min=4, step=15, precision=0, update=_update_res_y, description='Sets res_y Custom_Property')
@@ -3774,17 +3804,26 @@ class OBJECT_PT_TMG_Light_Randomize_Options(bpy.types.Panel):
 
         if len(obs) > 0:
             layout = self.layout.column(align=True)
-            layout.use_property_split = True
+            layout.use_property_split = False
             layout.use_property_decorate = False 
 
+            row = layout.row(align=True)
+            row.prop(tmg_cam_vars, "light_random_type_point", icon="LIGHT_POINT")
+            row.prop(tmg_cam_vars, "light_random_type_sun", icon="LIGHT_SUN")
+            row.prop(tmg_cam_vars, "light_random_type_spot", icon="LIGHT_SPOT")
+            row.prop(tmg_cam_vars, "light_random_type_area", icon="LIGHT_AREA")
+
+            layout.use_property_split = True
+            layout.use_property_decorate = False 
 
             layout.prop(tmg_cam_vars, "light_random_color")
             layout.prop(tmg_cam_vars, "light_random_diffuse")
             layout.prop(tmg_cam_vars, "light_random_energy")
             layout.prop(tmg_cam_vars, "light_random_size")
             layout.prop(tmg_cam_vars, "light_random_specular")
-            layout.prop(tmg_cam_vars, "light_random_type")
+            # layout.prop(tmg_cam_vars, "light_random_type")
             layout.prop(tmg_cam_vars, "light_random_volume")
+
 
 
 class OBJECT_PT_TMG_Viewport_Panel(bpy.types.Panel):
