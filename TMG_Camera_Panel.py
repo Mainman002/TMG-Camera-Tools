@@ -678,6 +678,17 @@ def _update_const_res_y(self, context):
     scene.render.resolution_y = int( tmg_cam_vars.const_res_y )
 
 
+def _append_ob_list(_list, _type):
+    if bpy.context.active_object.type == _type:
+            _list.append(bpy.context.active_object)
+
+    for ob in bpy.context.selected_objects:
+        if ob.type == _type:
+            _list.append(ob)
+
+    return _list
+
+
 class OBJECT_OT_Randomize_Selected_Light(bpy.types.Operator):
     """Randomizes selected light values"""
     bl_idname = 'object.tmg_randomize_light'
@@ -688,51 +699,74 @@ class OBJECT_OT_Randomize_Selected_Light(bpy.types.Operator):
         scene = context.scene
         tmg_cam_vars = scene.tmg_cam_vars
         # ob = context.active_object
-        objs = bpy.context.selected_objects
 
-        light_types = ["POINT", "SUN", "SPOT", "AREA"]
+        objs = []
+
+        if bpy.context.active_object.type == "LIGHT":
+            objs.append(bpy.context.active_object)
+
+        for ob in bpy.context.selected_objects:
+            if ob.type == "LIGHT":
+                objs.append(ob)
+
+        # objs = bpy.context.selected_objects
+
+        light_types = []
+
+        if tmg_cam_vars.light_random_type:
+            if tmg_cam_vars.light_random_type_point:
+                light_types.append("POINT")
+
+            if tmg_cam_vars.light_random_type_sun:
+                light_types.append("SUN")
+
+            if tmg_cam_vars.light_random_type_spot:
+                light_types.append("SPOT")
+
+            if tmg_cam_vars.light_random_type_area:
+                light_types.append("AREA")
 
         for ob in objs:
             if ob and ob.type == "LIGHT":
-                if tmg_cam_vars.light_random_type:
-                    ob.data.type = light_types[int( uniform(0, 4) )]
+                if len(light_types) > 0 and tmg_cam_vars.light_random_type:
+                    ob.data.type = light_types[int( uniform(0, len(light_types)) )]
 
                 light = ob.data
 
                 ## Check color lock
                 if tmg_cam_vars.light_random_color:
-                    light.color.r = uniform(0, 1)
-                    light.color.g = uniform(0, 1)
-                    light.color.b = uniform(0, 1)
+                    light.color.r = uniform(tmg_cam_vars.light_random_color_r_min, tmg_cam_vars.light_random_color_r_max)
+                    light.color.g = uniform(tmg_cam_vars.light_random_color_g_min, tmg_cam_vars.light_random_color_g_max)
+                    light.color.b = uniform(tmg_cam_vars.light_random_color_b_min, tmg_cam_vars.light_random_color_b_max)
                     
                 ## Check energy lock
                 if tmg_cam_vars.light_random_energy:
-                    light.energy = uniform(50, 150)
+                    light.energy = uniform(tmg_cam_vars.light_random_energy_min, tmg_cam_vars.light_random_energy_max)
                 
                 ## Check diffuse lock
                 if tmg_cam_vars.light_random_diffuse:
-                    light.diffuse_factor = uniform(0.1, 5)
+                    light.diffuse_factor = uniform(tmg_cam_vars.light_random_diffuse_min, tmg_cam_vars.light_random_diffuse_max)
                 
                 ## Check specular lock
                 if tmg_cam_vars.light_random_specular:
-                    light.specular_factor = uniform(0.1, 5)
+                    light.specular_factor = uniform(tmg_cam_vars.light_random_specular_min, tmg_cam_vars.light_random_specular_max)
                     
                 ## Check volume lock
                 if tmg_cam_vars.light_random_volume:
-                    light.volume_factor = uniform(0.1, 5)
+                    light.volume_factor = uniform(tmg_cam_vars.light_random_volume_min, tmg_cam_vars.light_random_volume_max)
                     
                 ## Check size lock
                 if tmg_cam_vars.light_random_size:
                     if ob.data.type == "POINT":
-                        light.shadow_soft_size = uniform(0.125, 10)
+                        light.shadow_soft_size = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
                         
                     if ob.data.type == "AREA":
-                        light.size = uniform(0.125, 10)
+                        light.size = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
                         
                     if ob.data.type == "SPOT":
-                        light.shadow_soft_size = uniform(0.125, 10)
-                        light.spot_size = uniform(0.5, 3.0)
-                        light.spot_blend = uniform(0.5, 1.0)
+                        light.shadow_soft_size = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
+                        light.spot_size = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
+                        light.spot_blend = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
 
         return {'FINISHED'}
 
@@ -755,6 +789,40 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     curve_size_y : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
     curve_size_z : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
 
+    ## Randomize Variables
+    ## Red
+    light_random_color_r_min : bpy.props.FloatProperty(name='R Min', default=0.0, soft_min=0.0, soft_max=1.0)
+    light_random_color_r_max : bpy.props.FloatProperty(name='R Max', default=1.0, soft_min=0.0, soft_max=1.0)
+
+    ## Green
+    light_random_color_g_min : bpy.props.FloatProperty(name='G Min', default=0.0, soft_min=0.0, soft_max=1.0)
+    light_random_color_g_max : bpy.props.FloatProperty(name='G Max', default=1.0, soft_min=0.0, soft_max=1.0)
+
+    ## Blue
+    light_random_color_b_min : bpy.props.FloatProperty(name='B Min', default=0.0, soft_min=0.0, soft_max=1.0)
+    light_random_color_b_max : bpy.props.FloatProperty(name='B Max', default=1.0, soft_min=0.0, soft_max=1.0)
+
+    ## Diffuse
+    light_random_diffuse_min : bpy.props.FloatProperty(name='Diffuse Min', default=0.0, soft_min=0.0, soft_max=1.0)
+    light_random_diffuse_max : bpy.props.FloatProperty(name='Diffuse Max', default=1.0, soft_min=0.0, soft_max=1.0)
+
+
+    ## Energy
+    light_random_energy_min : bpy.props.FloatProperty(name='Energy Min', default=1.0, soft_min=0.0, soft_max=200.0)
+    light_random_energy_max : bpy.props.FloatProperty(name='Energy Max', default=10.0, soft_min=0.0, soft_max=200.0)
+
+    ## Size
+    light_random_size_min : bpy.props.FloatProperty(name='Size Min', default=0.1, soft_min=0.0, soft_max=10.0)
+    light_random_size_max : bpy.props.FloatProperty(name='Size Max', default=1.0, soft_min=0.0, soft_max=10.0)
+
+    ## Specular
+    light_random_specular_min : bpy.props.FloatProperty(name='Specular Min', default=0.0, soft_min=0.0, soft_max=1.0)
+    light_random_specular_max : bpy.props.FloatProperty(name='Specular Max', default=1.0, soft_min=0.0, soft_max=1.0)
+
+    ## Volume
+    light_random_volume_min : bpy.props.FloatProperty(name='Volume Min', default=0.0, soft_min=0.0, soft_max=1.0)
+    light_random_volume_max : bpy.props.FloatProperty(name='Volume Max', default=1.0, soft_min=0.0, soft_max=1.0)
+
     light_random_color : bpy.props.BoolProperty(name='Color', default=False)
     light_random_diffuse : bpy.props.BoolProperty(name='Diffuse', default=False)
     light_random_energy : bpy.props.BoolProperty(name='Energy', default=False)
@@ -762,6 +830,11 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     light_random_specular : bpy.props.BoolProperty(name='Specular', default=False)
     light_random_type : bpy.props.BoolProperty(name='Type', default=False)
     light_random_volume : bpy.props.BoolProperty(name='Volume', default=False)
+
+    light_random_type_point : bpy.props.BoolProperty(name='Point', default=False)
+    light_random_type_sun : bpy.props.BoolProperty(name='Sun', default=False)
+    light_random_type_spot : bpy.props.BoolProperty(name='Spot', default=False)
+    light_random_type_area : bpy.props.BoolProperty(name='Area', default=False)
 
     res_x : bpy.props.FloatProperty(default=1920, subtype='PIXEL', min=4, step=15, precision=0, update=_update_res_x, description='Sets res_x Custom_Property')
     res_y : bpy.props.FloatProperty(default=1080, subtype='PIXEL', min=4, step=15, precision=0, update=_update_res_y, description='Sets res_y Custom_Property')
@@ -3718,9 +3791,7 @@ class OBJECT_PT_TMG_Light_Randomize(bpy.types.Panel):
     def poll(cls, context):
         obs = []
 
-        for ob in bpy.context.selected_objects:
-            if ob.type == "LIGHT":
-                obs.append(ob)
+        _append_ob_list(obs, "LIGHT")
 
         for light in obs:
             return light.data
@@ -3731,22 +3802,20 @@ class OBJECT_PT_TMG_Light_Randomize(bpy.types.Panel):
         
         obs = []
 
-        for ob in bpy.context.selected_objects:
-            if ob.type == "LIGHT":
-                obs.append(ob)
+        _append_ob_list(obs, "LIGHT")
 
         if len(obs) > 0:
             layout = self.layout
             layout.use_property_split = True
             layout.use_property_decorate = False 
 
-            layout.operator("object.tmg_randomize_light", text="Randomize Light")
+            layout.operator("object.tmg_randomize_light", text="Randomize Light", icon="LIGHT")
 
 
 class OBJECT_PT_TMG_Light_Randomize_Options(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_light_randomize_options"
     bl_category = 'TMG Camera'
-    bl_label = "Options"
+    bl_label = "Limits"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = "OBJECT_PT_tmg_light_randomize"
@@ -3756,9 +3825,7 @@ class OBJECT_PT_TMG_Light_Randomize_Options(bpy.types.Panel):
     def poll(cls, context):
         obs = []
 
-        for ob in bpy.context.selected_objects:
-            if ob.type == "LIGHT":
-                obs.append(ob)
+        _append_ob_list(obs, "LIGHT")
 
         for light in obs:
             return light.data
@@ -3768,23 +3835,137 @@ class OBJECT_PT_TMG_Light_Randomize_Options(bpy.types.Panel):
         tmg_cam_vars = scene.tmg_cam_vars
         obs = []
 
-        for ob in bpy.context.selected_objects:
-            if ob.type == "LIGHT":
-                obs.append(ob)
+        _append_ob_list(obs, "LIGHT")
 
         if len(obs) > 0:
             layout = self.layout.column(align=True)
-            layout.use_property_split = True
+            layout.use_property_split = False
             layout.use_property_decorate = False 
 
-
-            layout.prop(tmg_cam_vars, "light_random_color")
-            layout.prop(tmg_cam_vars, "light_random_diffuse")
-            layout.prop(tmg_cam_vars, "light_random_energy")
-            layout.prop(tmg_cam_vars, "light_random_size")
-            layout.prop(tmg_cam_vars, "light_random_specular")
+            ## Type Limits
+            # layout.label(text="Type")
             layout.prop(tmg_cam_vars, "light_random_type")
+
+            if tmg_cam_vars.light_random_type:
+                row = layout.row(align=True)
+                row.prop(tmg_cam_vars, "light_random_type_point", icon="LIGHT_POINT")
+                row.prop(tmg_cam_vars, "light_random_type_sun", icon="LIGHT_SUN")
+                row.prop(tmg_cam_vars, "light_random_type_spot", icon="LIGHT_SPOT")
+                row.prop(tmg_cam_vars, "light_random_type_area", icon="LIGHT_AREA")
+                # row.active = tmg_cam_vars.light_random_type
+
+
+            layout = self.layout.column(align=True)
+            layout.use_property_split = False
+            layout.use_property_decorate = False 
+
+            ## Color Limits
+            # layout.label(text="Color")
+            layout.prop(tmg_cam_vars, "light_random_color")
+
+
+            if tmg_cam_vars.light_random_color:
+                ## Color Red Limits
+                row = layout.row(align=True)
+                row.prop(tmg_cam_vars, "light_random_color_r_min", slider=True)
+                row.prop(tmg_cam_vars, "light_random_color_r_max", slider=True)
+                # row.active = tmg_cam_vars.light_random_color
+
+                ## Color Green Limits
+                row = layout.row(align=True)
+                row.prop(tmg_cam_vars, "light_random_color_g_min", slider=True)
+                row.prop(tmg_cam_vars, "light_random_color_g_max", slider=True)
+                # row.active = tmg_cam_vars.light_random_color
+
+                ## Color Blue Limits
+                row = layout.row(align=True)
+                row.prop(tmg_cam_vars, "light_random_color_b_min", slider=True)
+                row.prop(tmg_cam_vars, "light_random_color_b_max", slider=True)
+                # row.active = tmg_cam_vars.light_random_color
+
+            layout = self.layout.column(align=True)
+            layout.use_property_split = False
+            layout.use_property_decorate = False 
+
+            ## Diffuse Limits
+            # layout.label(text="Diffuse")
+            layout.prop(tmg_cam_vars, "light_random_diffuse")
+
+            if tmg_cam_vars.light_random_diffuse:
+                row = layout.row(align=True)
+                row.prop(tmg_cam_vars, "light_random_diffuse_min", slider=True)
+                row.prop(tmg_cam_vars, "light_random_diffuse_max", slider=True)
+                # row.active = tmg_cam_vars.light_random_diffuse
+
+            layout = self.layout.column(align=True)
+            layout.use_property_split = False
+            layout.use_property_decorate = False 
+
+            ## Energy Limits
+            # layout.label(text="Energy")
+            layout.prop(tmg_cam_vars, "light_random_energy")
+
+            if tmg_cam_vars.light_random_energy:
+                row = layout.row(align=True)
+                row.prop(tmg_cam_vars, "light_random_energy_min", slider=True)
+                row.prop(tmg_cam_vars, "light_random_energy_max", slider=True)
+                # row.active = tmg_cam_vars.light_random_energy
+
+            layout = self.layout.column(align=True)
+            layout.use_property_split = False
+            layout.use_property_decorate = False 
+
+            ## Size Limits
+            # layout.label(text="Size")
+            layout.prop(tmg_cam_vars, "light_random_size")
+
+            if tmg_cam_vars.light_random_size:
+                row = layout.row(align=True)
+                row.prop(tmg_cam_vars, "light_random_size_min", slider=True)
+                row.prop(tmg_cam_vars, "light_random_size_max", slider=True)
+                # row.active = tmg_cam_vars.light_random_size
+
+            layout = self.layout.column(align=True)
+            layout.use_property_split = False
+            layout.use_property_decorate = False 
+
+            ## Specular Limits
+            # layout.label(text="Specular")
+            layout.prop(tmg_cam_vars, "light_random_specular")
+
+            if tmg_cam_vars.light_random_specular:
+                row = layout.row(align=True)
+                row.prop(tmg_cam_vars, "light_random_specular_min", slider=True)
+                row.prop(tmg_cam_vars, "light_random_specular_max", slider=True)
+                # row.active = tmg_cam_vars.light_random_specular
+
+            layout = self.layout.column(align=True)
+            layout.use_property_split = False
+            layout.use_property_decorate = False 
+
+            ## Volume Limits
+            # layout.label(text="Volume")
             layout.prop(tmg_cam_vars, "light_random_volume")
+
+            if tmg_cam_vars.light_random_volume:
+                row = layout.row(align=True)
+                row.prop(tmg_cam_vars, "light_random_volume_min", slider=True)
+                row.prop(tmg_cam_vars, "light_random_volume_max", slider=True)
+                # row.active = tmg_cam_vars.light_random_volume
+
+            ## Extra Booleans
+            # layout = self.layout.column(align=True)
+            # layout.use_property_split = True
+            # layout.use_property_decorate = False 
+
+            # layout.prop(tmg_cam_vars, "light_random_color")
+            # layout.prop(tmg_cam_vars, "light_random_diffuse")
+            # layout.prop(tmg_cam_vars, "light_random_energy")
+            # layout.prop(tmg_cam_vars, "light_random_size")
+            # layout.prop(tmg_cam_vars, "light_random_specular")
+            # layout.prop(tmg_cam_vars, "light_random_type")
+            # layout.prop(tmg_cam_vars, "light_random_volume")
+
 
 
 class OBJECT_PT_TMG_Viewport_Panel(bpy.types.Panel):
