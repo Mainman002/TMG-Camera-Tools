@@ -12,7 +12,7 @@ Tutorial showcasing current features
 * Organize features to their respective panels as much as I possibly can
 * Try my best to use built in operators / properties without adding too many custom operators / properties
 
-![TMG_Camera_Panel_0_2_5](https://user-images.githubusercontent.com/11281480/141370957-7e749425-b029-4830-864b-7768efa7bdf6.png)
+![TMG_Camera_Panel_0_2_6](https://user-images.githubusercontent.com/11281480/141872363-05cccdcf-5a73-41ac-93e3-b7adcef6ed6b.png)
 
 (I have no affiliation with these youtube channels / people but I find them to have epic tips / tricks)
 
