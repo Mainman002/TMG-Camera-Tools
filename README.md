@@ -1,6 +1,9 @@
 # TMG-Camera-Tools
 A blender 3.0 addon for managing camera settings
 
+Download Latest Stable Version
+* [(0.2.6) Blender_3.0](https://github.com/Mainman002/TMG-Camera-Tools/releases/tag/0.2.7)
+
 Tutorial showcasing current features
 * https://youtu.be/gdwE-INtjs4
 
