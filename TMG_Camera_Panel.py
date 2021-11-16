@@ -361,7 +361,7 @@ def _change_scene_camera(self, context):
         if "sensor_profile" in camera:
             pass
         else:
-            camera["sensor_profile"] = 0
+            camera["sensor_profile"] = 2
         
         camera.data.passepartout_alpha = tmg_cam_vars.camera_passepartout_alpha
         camera.data.show_passepartout = tmg_cam_vars.use_camera_passepartout_alpha
