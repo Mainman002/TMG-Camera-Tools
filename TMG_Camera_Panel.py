@@ -689,6 +689,76 @@ def _append_ob_list(_list, _type):
     return _list
 
 
+def _rand_float_range(_start, _end):
+    return uniform(_start, _end)
+
+
+def _rand_int_range(_start, _end):
+    return randint(_start, _end)
+
+
+def _randomize_lighting(self, context, ob):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    light_types = []
+
+    if tmg_cam_vars.light_random_type:
+        if tmg_cam_vars.light_random_type_point:
+            light_types.append("POINT")
+
+        if tmg_cam_vars.light_random_type_sun:
+            light_types.append("SUN")
+
+        if tmg_cam_vars.light_random_type_spot:
+            light_types.append("SPOT")
+
+        if tmg_cam_vars.light_random_type_area:
+            light_types.append("AREA")
+
+        if len(light_types) > 0 and tmg_cam_vars.light_random_type:
+            ob.data.type = light_types[ _rand_int_range(0, len( light_types )-1 ) ]
+
+    light = ob.data
+
+    ## Check color lock
+    if tmg_cam_vars.light_random_color:
+        light.color.r = uniform(tmg_cam_vars.light_random_color_r_min, tmg_cam_vars.light_random_color_r_max)
+        light.color.g = uniform(tmg_cam_vars.light_random_color_g_min, tmg_cam_vars.light_random_color_g_max)
+        light.color.b = uniform(tmg_cam_vars.light_random_color_b_min, tmg_cam_vars.light_random_color_b_max)
+        
+    ## Check energy lock
+    if tmg_cam_vars.light_random_energy:
+        light.energy = uniform(tmg_cam_vars.light_random_energy_min, tmg_cam_vars.light_random_energy_max)
+    
+    ## Check diffuse lock
+    if tmg_cam_vars.light_random_diffuse:
+        light.diffuse_factor = uniform(tmg_cam_vars.light_random_diffuse_min, tmg_cam_vars.light_random_diffuse_max)
+            
+    # return _list
+    ## Check specular lock
+    if tmg_cam_vars.light_random_specular:
+        light.specular_factor = uniform(tmg_cam_vars.light_random_specular_min, tmg_cam_vars.light_random_specular_max)
+        
+    ## Check volume lock
+    if tmg_cam_vars.light_random_volume:
+        light.volume_factor = uniform(tmg_cam_vars.light_random_volume_min, tmg_cam_vars.light_random_volume_max)
+        
+    ## Check size lock
+    if tmg_cam_vars.light_random_size:
+        if ob.data.type == "POINT":
+            light.shadow_soft_size = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
+            
+        if ob.data.type == "AREA":
+            light.size = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
+            
+        if ob.data.type == "SPOT":
+            light.shadow_soft_size = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
+            light.spot_size = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
+            light.spot_blend = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
+
+    return {'FINISHED'}
+
+
 class OBJECT_OT_Randomize_Selected_Light(bpy.types.Operator):
     """Randomizes selected light values"""
     bl_idname = 'object.tmg_randomize_light'
@@ -698,75 +768,13 @@ class OBJECT_OT_Randomize_Selected_Light(bpy.types.Operator):
     def execute(self, context):
         scene = context.scene
         tmg_cam_vars = scene.tmg_cam_vars
-        # ob = context.active_object
-
-        objs = []
 
         if bpy.context.active_object.type == "LIGHT":
-            objs.append(bpy.context.active_object)
+            _randomize_lighting(self, context, bpy.context.active_object)
 
         for ob in bpy.context.selected_objects:
-            if ob.type == "LIGHT":
-                objs.append(ob)
-
-        # objs = bpy.context.selected_objects
-
-        light_types = []
-
-        if tmg_cam_vars.light_random_type:
-            if tmg_cam_vars.light_random_type_point:
-                light_types.append("POINT")
-
-            if tmg_cam_vars.light_random_type_sun:
-                light_types.append("SUN")
-
-            if tmg_cam_vars.light_random_type_spot:
-                light_types.append("SPOT")
-
-            if tmg_cam_vars.light_random_type_area:
-                light_types.append("AREA")
-
-        for ob in objs:
-            if ob and ob.type == "LIGHT":
-                if len(light_types) > 0 and tmg_cam_vars.light_random_type:
-                    ob.data.type = light_types[int( uniform(0, len(light_types)) )]
-
-                light = ob.data
-
-                ## Check color lock
-                if tmg_cam_vars.light_random_color:
-                    light.color.r = uniform(tmg_cam_vars.light_random_color_r_min, tmg_cam_vars.light_random_color_r_max)
-                    light.color.g = uniform(tmg_cam_vars.light_random_color_g_min, tmg_cam_vars.light_random_color_g_max)
-                    light.color.b = uniform(tmg_cam_vars.light_random_color_b_min, tmg_cam_vars.light_random_color_b_max)
-                    
-                ## Check energy lock
-                if tmg_cam_vars.light_random_energy:
-                    light.energy = uniform(tmg_cam_vars.light_random_energy_min, tmg_cam_vars.light_random_energy_max)
-                
-                ## Check diffuse lock
-                if tmg_cam_vars.light_random_diffuse:
-                    light.diffuse_factor = uniform(tmg_cam_vars.light_random_diffuse_min, tmg_cam_vars.light_random_diffuse_max)
-                
-                ## Check specular lock
-                if tmg_cam_vars.light_random_specular:
-                    light.specular_factor = uniform(tmg_cam_vars.light_random_specular_min, tmg_cam_vars.light_random_specular_max)
-                    
-                ## Check volume lock
-                if tmg_cam_vars.light_random_volume:
-                    light.volume_factor = uniform(tmg_cam_vars.light_random_volume_min, tmg_cam_vars.light_random_volume_max)
-                    
-                ## Check size lock
-                if tmg_cam_vars.light_random_size:
-                    if ob.data.type == "POINT":
-                        light.shadow_soft_size = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
-                        
-                    if ob.data.type == "AREA":
-                        light.size = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
-                        
-                    if ob.data.type == "SPOT":
-                        light.shadow_soft_size = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
-                        light.spot_size = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
-                        light.spot_blend = uniform(tmg_cam_vars.light_random_size_min, tmg_cam_vars.light_random_size_max)
+            if ob.type == "LIGHT" and ob != bpy.context.active_object:
+                _randomize_lighting(self, context, ob)
 
         return {'FINISHED'}
 
