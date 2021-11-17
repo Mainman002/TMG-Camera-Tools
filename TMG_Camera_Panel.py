@@ -4,7 +4,7 @@ from bpy.props import StringProperty, BoolProperty, EnumProperty, IntProperty, F
 from bpy.types import Operator, Header
 from bpy_extras.node_utils import find_node_input
 from bl_ui.utils import PresetPanel
-from random import uniform
+from random import uniform, randint
 # from math import 
 
 
