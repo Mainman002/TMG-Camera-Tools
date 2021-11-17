@@ -6,7 +6,7 @@ Download Latest Stable Versions
 * [(0.2.6) Blender_3.0](https://github.com/Mainman002/TMG-Camera-Tools/releases/tag/0.2.7)
 
 Tutorial showcasing current features
-* https://youtu.be/gdwE-INtjs4
+* https://youtu.be/zCAL6O8KqP0
 
 ## My Goals for this add-on:
 * Keep the layout as simple / unified as possible without adding too much bloat (Might have stretched this goal a little xD)
