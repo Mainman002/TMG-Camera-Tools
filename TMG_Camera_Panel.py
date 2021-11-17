@@ -679,11 +679,11 @@ def _update_const_res_y(self, context):
 
 
 def _append_ob_list(_list, _type):
-    if bpy.context.active_object.type == _type:
+    if bpy.context.active_object and bpy.context.active_object.type == _type:
             _list.append(bpy.context.active_object)
 
     for ob in bpy.context.selected_objects:
-        if ob.type == _type:
+        if ob and ob.type == _type:
             _list.append(ob)
 
     return _list
