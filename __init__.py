@@ -27,8 +27,8 @@ bl_info = {
     "name": "TMG_Camera_Tools",
     "author": "Johnathan Mueller",
     "descrtion": "A panel to set camera sensor values for rendering",
-    "blender": (2, 80, 0),
-    "version": (0, 2, 6),
+    "blender": (3, 0, 0),
+    "version": (0, 2, 7),
     "location": "View3D (ObjectMode) > Sidebar > TMG_Camera Tab",
     "warning": "",
     "category": "Object"
@@ -38,8 +38,14 @@ classes = (
     ## Properties
     TMG_Camera_Properties,
     
+    ## Camera Operators
+    OBJECT_PT_RenameOB,
+    OBJECT_PT_SelectOB,
+    OBJECT_PT_DeleteOB,
+    
     ## Camera Panel
     OBJECT_PT_TMG_Camera_Panel, 
+    OBJECT_PT_TMG_Camera_Panel_List, 
     OBJECT_PT_TMG_Camera_Panel_Name, 
     OBJECT_PT_TMG_Camera_Panel_Perspective, 
     

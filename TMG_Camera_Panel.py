@@ -5,7 +5,16 @@ from bpy.types import Operator, Header
 from bpy_extras.node_utils import find_node_input
 from bl_ui.utils import PresetPanel
 from random import uniform, randint
-# from math import 
+
+
+# Update Blender UI Panels
+def tag_redraw(context, space_type="PROPERTIES", region_type="WINDOW"):
+    for window in context.window_manager.windows:
+        for area in window.screen.areas:
+            if area.spaces[0].type == space_type:
+                for region in area.regions:
+                    if region.type == region_type:
+                        region.tag_redraw()
 
 
 active_dict = {
@@ -679,11 +688,11 @@ def _update_const_res_y(self, context):
 
 
 def _append_ob_list(_list, _type):
-    if bpy.context.active_object and bpy.context.active_object.type == _type:
+    if bpy.context.active_object.type == _type:
             _list.append(bpy.context.active_object)
 
     for ob in bpy.context.selected_objects:
-        if ob and ob.type == _type:
+        if ob.type == _type:
             _list.append(ob)
 
     return _list
@@ -781,7 +790,8 @@ class OBJECT_OT_Randomize_Selected_Light(bpy.types.Operator):
 
 class TMG_Camera_Properties(bpy.types.PropertyGroup):
     scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, poll=_tmg_search_cameras, description='Scene active camera', update=_change_scene_camera)
-    
+    cam_name : bpy.props.StringProperty(name='Camera', default='Camera', update=_change_scene_camera)
+
     camera_name_lock : bpy.props.BoolProperty(name='Linked Name', default=True)
     camera_name : bpy.props.StringProperty(name='Object', default='Camera', update=_rename_camera)
     camera_data_name : bpy.props.StringProperty(name='Data', default='Camera', update=_rename_camera_data)
@@ -889,6 +899,67 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     ('2', 'Preset', '')], update=_change_res_lock)
     
 
+class OBJECT_PT_RenameOB(Operator):
+    """Rename active scene camera"""
+
+    bl_idname = "tmg_cam.rename_ob"
+    bl_label = ""
+    bl_options = {'REGISTER', 'UNDO'}
+    ob_name : bpy.props.StringProperty(name="Object Name")
+
+    def execute(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+
+        bpy.data.objects[self.ob_name].name = tmg_cam_vars.cam_name
+
+        if bpy.data.objects[tmg_cam_vars.cam_name].data:
+            bpy.data.objects[tmg_cam_vars.cam_name].data.name = tmg_cam_vars.cam_name
+        return {'FINISHED'}
+
+
+class OBJECT_PT_SelectOB(Operator):
+    """Select camera from scene and set it to active scene camera"""
+
+    bl_idname = "tmg_cam.select_ob"
+    bl_label = ""
+    bl_options = {'REGISTER', 'UNDO'}
+    name : bpy.props.StringProperty(name="Object Name")
+
+    def execute(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+
+        bpy.context.space_data.camera = bpy.data.objects[self.name]
+        tmg_cam_vars.scene_camera = bpy.context.space_data.camera
+
+        tag_redraw(context)
+        return {'FINISHED'}
+
+
+class OBJECT_PT_DeleteOB(Operator):
+    """Delete camera from scene"""
+
+    bl_idname = "tmg_cam.delete_ob"
+    bl_label = ""
+    bl_options = {'REGISTER', 'UNDO'}
+    name : bpy.props.StringProperty(name="Object Name")
+
+    def execute(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+
+        if bpy.context.space_data.camera and self.name == bpy.context.space_data.camera.name:
+            tmg_cam_vars.scene_camera = None
+            bpy.context.space_data.camera = None
+            tag_redraw(context)
+
+        if bpy.data.objects[self.name]:
+            bpy.data.objects.remove(bpy.data.objects[self.name], do_unlink=True)
+
+        return {'FINISHED'}
+    
+    
 class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
     bl_idname = 'OBJECT_PT_tmg_camera_panel'
     bl_category = 'TMG Camera'
@@ -905,6 +976,7 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False 
         layout = layout.column()
+
         col1 = layout.column()
         col2 = layout.column()
         layout.ui_units_y = 2
@@ -926,6 +998,57 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
             row.label(text='Select a camera to begin')
         
 
+class OBJECT_PT_TMG_Camera_Panel_List(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_camera_panel_list"
+    bl_label = ""
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_camera_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw_header(self, context):
+        layout = self.layout
+
+        objs = []
+        for ob in bpy.context.scene.objects:
+            if ob.type == "CAMERA":
+                objs.append(ob)
+
+        layout.label(text="Cameras : %s" %len(objs))
+        
+
+    def draw(self, context):
+        scene = context.scene
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+        layout = self.layout
+             
+        objs = []
+
+        for ob in bpy.context.scene.objects:
+            if ob.type == "CAMERA":
+                objs.append(ob)
+
+        box = layout.box()
+        col = box.column(align=False)
+        row = col.row(align=True)
+
+        if len(objs) < 1: 
+            col.label(text="No Objects in Scene")
+
+        for ob in objs:
+            row = col.row(align=True)
+
+            if bpy.context.space_data.camera == ob:
+                prop = row.operator("tmg_cam.select_ob", text=ob.name, emboss=False) #  icon="RESTRICT_SELECT_OFF",
+            else:
+                prop = row.operator("tmg_cam.select_ob", text=ob.name, emboss=True) #  icon="RESTRICT_SELECT_ON",
+            prop.name = ob.name
+
+            prop = row.operator("tmg_cam.delete_ob", text='', icon="TRASH")
+            prop.name = ob.name      
+
+            
 class OBJECT_PT_TMG_Camera_Panel_Name(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_camera_panel_name"
     bl_label = "Name"
@@ -2382,12 +2505,18 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Advanced(bpy.types.Panel):
             layout.separator()
 
             col = layout.column(align=True)
-            col.active = not (cscene.use_adaptive_sampling and cscene.use_preview_adaptive_sampling)
-            col.prop(cscene, "scrambling_distance", text="Scrambling Distance")
-            col.prop(cscene, "adaptive_scrambling_distance", text="Adaptive")
+
             sub = col.row(align=True)
-            sub.active = not cscene.use_preview_adaptive_sampling
+            sub.active = not (cscene.use_adaptive_sampling and cscene.use_preview_adaptive_sampling)
+            sub.prop(cscene, "auto_scrambling_distance", text="Automatic")
+
+            sub = col.row()
+            sub.active = not (cscene.use_preview_adaptive_sampling)
             sub.prop(cscene, "preview_scrambling_distance", text="Viewport")
+            
+            sub = col.row(align=True)
+            sub.active = not (cscene.use_adaptive_sampling and cscene.use_preview_adaptive_sampling)
+            sub.prop(cscene, "scrambling_distance", text="Multiplier")
 
             layout.separator()
 
