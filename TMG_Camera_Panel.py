@@ -5,6 +5,7 @@ from bpy.types import Operator, Header
 from bpy_extras.node_utils import find_node_input
 from bl_ui.utils import PresetPanel
 from random import uniform, randint
+# from math import 
 
 
 # Update Blender UI Panels
@@ -15,7 +16,7 @@ def tag_redraw(context, space_type="PROPERTIES", region_type="WINDOW"):
                 for region in area.regions:
                     if region.type == region_type:
                         region.tag_redraw()
-                        
+
 
 active_dict = {
     "type" : "PERSP", ##[ PERSP, ORTHO, PANO ]
@@ -288,16 +289,16 @@ def _change_res_lock(self, context):
     camera = tmg_cam_vars.scene_camera
     
     if tmg_cam_vars.cam_res_lock_modes == '0':
-        scene.render.resolution_x = tmg_cam_vars.const_res_x
-        scene.render.resolution_y = tmg_cam_vars.const_res_y
+        scene.render.resolution_x = int(tmg_cam_vars.const_res_x)
+        scene.render.resolution_y = int(tmg_cam_vars.const_res_y)
         
     if tmg_cam_vars.cam_res_lock_modes == '1':
         scene.render.resolution_x = _get_custom_property(camera, "res_x")
         scene.render.resolution_y = _get_custom_property(camera, "res_y")
         
     if tmg_cam_vars.cam_res_lock_modes == '2':
-        scene.render.resolution_x = tmg_cam_vars.res_x
-        scene.render.resolution_y = tmg_cam_vars.res_y
+        scene.render.resolution_x = int(tmg_cam_vars.res_x)
+        scene.render.resolution_y = int(tmg_cam_vars.res_y)
     
     _set_cam_res_values(self, context)
 
@@ -381,8 +382,8 @@ def _change_scene_camera(self, context):
             tmg_cam_vars.camera_data_name = camera.data.name
             
         if tmg_cam_vars.cam_res_lock_modes == '0':
-            scene.render.resolution_x = tmg_cam_vars.const_res_x
-            scene.render.resolution_y = tmg_cam_vars.const_res_y
+            scene.render.resolution_x = int(tmg_cam_vars.const_res_x)
+            scene.render.resolution_y = int(tmg_cam_vars.const_res_y)
             
         if tmg_cam_vars.cam_res_lock_modes == '1':
             tmg_cam_vars.res_x = _get_custom_property(camera, "res_x")
@@ -495,7 +496,7 @@ def _add_constraint(self, context, _con):
     camera.constraints.new(_con)
 
 
-class OBJECT_OT_Add_Constraint(bpy.types.Operator):
+class OBJECT_OT_TMG_Cam_Add_Constraint(bpy.types.Operator):
     """Add constraint based on type"""
     bl_idname = 'object.tmg_add_constraint'
     bl_label = 'Add Constraint'
@@ -538,7 +539,7 @@ def _move_constraint(self, context, _con, _dir):
     _change_ob(self, context, original_ob)
     
     
-class OBJECT_OT_Move_Constraint(bpy.types.Operator):
+class OBJECT_OT_TMG_Cam_Move_Constraint(bpy.types.Operator):
     """Remove all constraints of type"""
     bl_idname = 'object.tmg_move_constraint'
     bl_label = 'Move Constraint'
@@ -561,7 +562,7 @@ def _remove_constraint(self, context, _con):
             camera.constraints.remove(con)
     
     
-class OBJECT_OT_Remove_Constraint(bpy.types.Operator):
+class OBJECT_OT_TMG_Cam_Remove_Constraint(bpy.types.Operator):
     """Remove all constraints of type"""
     bl_idname = 'object.tmg_remove_constraint'
     bl_label = 'Remove Constraint'
@@ -632,7 +633,7 @@ def _set_ob_data_name(self, value):
             ob.data.name = value
 
     
-class OBJECT_OT_Select_Camera(bpy.types.Operator):
+class OBJECT_OT_TMG_Cam_Select_Camera(bpy.types.Operator):
     """Select scene camera"""
     bl_idname = 'object.tmg_select_camera'
     bl_label = 'Select Camera'
@@ -688,11 +689,11 @@ def _update_const_res_y(self, context):
 
 
 def _append_ob_list(_list, _type):
-    if bpy.context.active_object and bpy.context.active_object.type == _type:
+    if bpy.context.active_object.type == _type:
             _list.append(bpy.context.active_object)
 
     for ob in bpy.context.selected_objects:
-        if ob and ob.type == _type:
+        if ob.type == _type:
             _list.append(ob)
 
     return _list
@@ -768,7 +769,7 @@ def _randomize_lighting(self, context, ob):
     return {'FINISHED'}
 
 
-class OBJECT_OT_Randomize_Selected_Light(bpy.types.Operator):
+class OBJECT_OT_TMG_Cam_Randomize_Selected_Light(bpy.types.Operator):
     """Randomizes selected light values"""
     bl_idname = 'object.tmg_randomize_light'
     bl_label = 'Randomize'
@@ -788,10 +789,10 @@ class OBJECT_OT_Randomize_Selected_Light(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class TMG_Camera_Properties(bpy.types.PropertyGroup):
+class TMG_Cam_Properties(bpy.types.PropertyGroup):
     scene_camera : bpy.props.PointerProperty(name='Camera', type=bpy.types.Object, poll=_tmg_search_cameras, description='Scene active camera', update=_change_scene_camera)
     cam_name : bpy.props.StringProperty(name='Camera', default='Camera', update=_change_scene_camera)
-    
+
     camera_name_lock : bpy.props.BoolProperty(name='Linked Name', default=True)
     camera_name : bpy.props.StringProperty(name='Object', default='Camera', update=_rename_camera)
     camera_data_name : bpy.props.StringProperty(name='Data', default='Camera', update=_rename_camera_data)
@@ -899,7 +900,7 @@ class TMG_Camera_Properties(bpy.types.PropertyGroup):
     ('2', 'Preset', '')], update=_change_res_lock)
     
 
-class OBJECT_PT_RenameOB(Operator):
+class OBJECT_PT_TMG_Cam_RenameOB(Operator):
     """Rename active scene camera"""
 
     bl_idname = "tmg_cam.rename_ob"
@@ -918,7 +919,7 @@ class OBJECT_PT_RenameOB(Operator):
         return {'FINISHED'}
 
 
-class OBJECT_PT_SelectOB(Operator):
+class OBJECT_PT_TMG_Cam_SelectOB(Operator):
     """Select camera from scene and set it to active scene camera"""
 
     bl_idname = "tmg_cam.select_ob"
@@ -937,7 +938,7 @@ class OBJECT_PT_SelectOB(Operator):
         return {'FINISHED'}
 
 
-class OBJECT_PT_DeleteOB(Operator):
+class OBJECT_PT_TMG_Cam_DeleteOB(Operator):
     """Delete camera from scene"""
 
     bl_idname = "tmg_cam.delete_ob"
@@ -958,15 +959,28 @@ class OBJECT_PT_DeleteOB(Operator):
             bpy.data.objects.remove(bpy.data.objects[self.name], do_unlink=True)
 
         return {'FINISHED'}
-    
-    
-class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
-    bl_idname = 'OBJECT_PT_tmg_camera_panel'
-    bl_category = 'TMG Camera'
-    bl_label = 'Camera'
+
+
+class OBJECT_PT_TMG_Cam_Parent_Panel(bpy.types.Panel):
+    bl_idname = 'OBJECT_PT_tmg_cam_parent_panel'
+    bl_category = 'TMG'
+    bl_label = 'Camera Tools'
     bl_context = "objectmode"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw(self, context):
+        layout = self.layout
+
+
+class OBJECT_PT_TMG_Cam_Panel(bpy.types.Panel):
+    bl_idname = 'OBJECT_PT_tmg_cam_panel'
+    bl_label = 'Camera'
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_parent_panel"
+    bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         scene = context.scene
@@ -976,7 +990,6 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False 
         layout = layout.column()
-
         col1 = layout.column()
         col2 = layout.column()
         layout.ui_units_y = 2
@@ -997,13 +1010,13 @@ class OBJECT_PT_TMG_Camera_Panel(bpy.types.Panel):
             row = col1.row(align=True)
             row.label(text='Select a camera to begin')
         
- 
-class OBJECT_PT_TMG_Camera_Panel_List(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_camera_panel_list"
+
+class OBJECT_PT_TMG_Cam_Panel_List(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_panel_list"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_camera_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -1046,15 +1059,15 @@ class OBJECT_PT_TMG_Camera_Panel_List(bpy.types.Panel):
             prop.name = ob.name
 
             prop = row.operator("tmg_cam.delete_ob", text='', icon="TRASH")
-            prop.name = ob.name        
-        
-        
-class OBJECT_PT_TMG_Camera_Panel_Name(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_camera_panel_name"
+            prop.name = ob.name      
+
+
+class OBJECT_PT_TMG_Cam_Panel_Name(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_panel_name"
     bl_label = "Name"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_camera_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_panel"
     bl_options = {"DEFAULT_CLOSED"}
             
     def draw(self, context):
@@ -1077,12 +1090,12 @@ class OBJECT_PT_TMG_Camera_Panel_Name(bpy.types.Panel):
                 layout.prop(tmg_cam_vars, 'camera_data_name')
         
             
-class OBJECT_PT_TMG_Camera_Panel_Perspective(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_camera_panel_perspective"
+class OBJECT_PT_TMG_Cam_Panel_Perspective(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_panel_perspective"
     bl_label = "Perspective"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_camera_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_panel"
     bl_options = {"DEFAULT_CLOSED"}
             
     def draw(self, context):
@@ -1115,24 +1128,24 @@ class OBJECT_PT_TMG_Camera_Panel_Perspective(bpy.types.Panel):
             layout.prop(tmg_cam_vars.scene_camera.data, 'clip_end')            
                                    
             
-class OBJECT_PT_TMG_Constraints_Panel(bpy.types.Panel):
-    bl_idname = 'OBJECT_PT_tmg_constraints_panel'
+class OBJECT_PT_TMG_Cam_Constraints_Panel(bpy.types.Panel):
+    bl_idname = 'OBJECT_PT_tmg_cam_constraints_panel'
     bl_category = 'TMG Camera'
     bl_label = 'Constraints'
-    bl_context = "objectmode"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_parent_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         pass
                  
-class OBJECT_PT_TMG_Constraints_Panel_Floor(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_TMG_constraints_panel_floor"
+class OBJECT_PT_TMG_Cam_Constraints_Panel_Floor(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_TMG_cam_constraints_panel_floor"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_constraints_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -1219,12 +1232,12 @@ class OBJECT_PT_TMG_Constraints_Panel_Floor(bpy.types.Panel):
                 props.con = "FLOOR"
                              
                              
-class OBJECT_PT_TMG_Constraints_Panel_Follow_Path(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_constraints_panel_follow_path"
+class OBJECT_PT_TMG_Cam_Constraints_Panel_Follow_Path(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_constraints_panel_follow_path"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_constraints_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -1316,12 +1329,12 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path(bpy.types.Panel):
                 props.con = "FOLLOW_PATH"
                 
                 
-class OBJECT_PT_TMG_Constraints_Panel_Follow_Path_Spline_Scale(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_constraints_panel_follow_path_spline_scale"
+class OBJECT_PT_TMG_Cam_Constraints_Panel_Follow_Path_Spline_Scale(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_constraints_panel_follow_path_spline_scale"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_constraints_panel_follow_path"
+    bl_parent_id = "OBJECT_PT_tmg_cam_constraints_panel_follow_path"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -1402,12 +1415,12 @@ class OBJECT_PT_TMG_Constraints_Panel_Follow_Path_Spline_Scale(bpy.types.Panel):
                 cn = None
                 
                 
-class OBJECT_PT_TMG_Constraints_Panel_Track_To(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_constraints_panel_track_to"
+class OBJECT_PT_TMG_Cam_Constraints_Panel_Track_To(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_constraints_panel_track_to"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_constraints_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_constraints_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -1491,25 +1504,25 @@ class OBJECT_PT_TMG_Constraints_Panel_Track_To(bpy.types.Panel):
                 props.con = "TRACK_TO"
    
    
-class OBJECT_PT_TMG_Output_Panel(bpy.types.Panel):
-    bl_idname = 'OBJECT_PT_tmg_output_panel'
+class OBJECT_PT_TMG_Cam_Output_Panel(bpy.types.Panel):
+    bl_idname = 'OBJECT_PT_tmg_cam_output_panel'
     bl_category = 'TMG Camera'
     bl_label = 'Output'
-    bl_context = "objectmode"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_parent_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         pass      
          
             
-class OBJECT_PT_TMG_Output_Panel_Image(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_output_panel_image"
+class OBJECT_PT_TMG_Cam_Output_Panel_Image(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_output_panel_image"
     bl_label = "Image"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_output_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_output_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
@@ -1534,12 +1547,12 @@ class OBJECT_PT_TMG_Output_Panel_Image(bpy.types.Panel):
             layout.prop(tmg_cam_vars, 'render_slot', text='Render Slot')
 
 
-class OBJECT_PT_TMG_Output_Panel_Image_Settings(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_output_panel_image_settings"
+class OBJECT_PT_TMG_Cam_Output_Panel_Image_Settings(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_output_panel_image_settings"
     bl_label = "Image Settings"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_output_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_output_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
@@ -1570,25 +1583,25 @@ class OBJECT_PT_TMG_Output_Panel_Image_Settings(bpy.types.Panel):
                 layout.prop(rd, "use_placeholder")          
 
             
-class OBJECT_PT_TMG_Passes_Panel(bpy.types.Panel):
-    bl_idname = 'OBJECT_PT_tmg_passes_panel'
+class OBJECT_PT_TMG_Cam_Passes_Panel(bpy.types.Panel):
+    bl_idname = 'OBJECT_PT_tmg_cam_passes_panel'
     bl_category = 'TMG Camera'
     bl_label = 'Passes'
-    bl_context = "objectmode"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_parent_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         pass
     
     
-class OBJECT_PT_TMG_Passes_Panel_Cryptomatte(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_passes_panel_cryptomatte"
+class OBJECT_PT_TMG_Cam_Passes_Panel_Cryptomatte(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_passes_panel_cryptomatte"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_passes_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_passes_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -1614,29 +1627,32 @@ class OBJECT_PT_TMG_Passes_Panel_Cryptomatte(bpy.types.Panel):
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()
+
+            view_layer = context.view_layer
+
+            layout.prop(view_layer, "use_pass_cryptomatte_object", text="Object")
+            layout.prop(view_layer, "use_pass_cryptomatte_material", text="Material")
+            layout.prop(view_layer, "use_pass_cryptomatte_asset", text="Asset")
+            col = layout.column()
+            col.active = view_layer.use_pass_cryptomatte_object or view_layer.use_pass_cryptomatte_material or view_layer.use_pass_cryptomatte_asset
+            col.prop(view_layer, "pass_cryptomatte_depth", text="Levels")
+        
             if rd.engine == "BLENDER_EEVEE" or rd.engine == "CYCLES":
-                layout = self.layout
-                layout.use_property_split = True
-                layout.use_property_decorate = False  # No animation.
-                layout = layout.column()
-
-                view_layer = context.view_layer
-
-                layout.prop(view_layer, "use_pass_cryptomatte_object", text="Object")
-                layout.prop(view_layer, "use_pass_cryptomatte_material", text="Material")
-                layout.prop(view_layer, "use_pass_cryptomatte_asset", text="Asset")
-    #            col = layout.column()
-                layout.active = any((view_layer.use_pass_cryptomatte_object, view_layer.use_pass_cryptomatte_material, view_layer.use_pass_cryptomatte_asset))
-                layout.prop(view_layer, "pass_cryptomatte_depth", text="Levels")
-                layout.prop(view_layer, "use_pass_cryptomatte_accurate", text="Accurate Mode")
+                layout.active = True
+            else:
+                layout.active = False
         
     
-class OBJECT_PT_TMG_Passes_Panel_Data(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_passes_panel_data"
+class OBJECT_PT_TMG_Cam_Passes_Panel_Data(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_passes_panel_data"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_passes_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_passes_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -1683,6 +1699,7 @@ class OBJECT_PT_TMG_Passes_Panel_Data(bpy.types.Panel):
                 layout.prop(view_layer, "use_pass_combined")
                 layout.prop(view_layer, "use_pass_z")
                 layout.prop(view_layer, "use_pass_mist")
+                layout.prop(view_layer, "use_pass_position")
                 layout.prop(view_layer, "use_pass_normal")
                 sub = layout.column()
                 sub.active = not rd.use_motion_blur
@@ -1696,19 +1713,24 @@ class OBJECT_PT_TMG_Passes_Panel_Data(bpy.types.Panel):
                 layout.prop(view_layer, "use_pass_material_index")
 
                 layout = layout.column(heading="Debug", align=True)
-                layout.prop(cycles_view_layer, "pass_debug_render_time", text="Render Time")
                 layout.prop(cycles_view_layer, "pass_debug_sample_count", text="Sample Count")
 
                 layout.prop(view_layer, "pass_alpha_threshold")
     
     
-class OBJECT_PT_TMG_Passes_Panel_Effects(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_passes_panel_effects"
+class OBJECT_PT_TMG_Cam_Passes_Panel_Effects(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_passes_panel_effects"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_passes_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_passes_panel"
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw_header(self, context):
         scene = context.scene
@@ -1746,14 +1768,77 @@ class OBJECT_PT_TMG_Passes_Panel_Effects(bpy.types.Panel):
                 
                 if rd.engine != "BLENDER_EEVEE":
                     layout.active = False
-        
-    
-class OBJECT_PT_TMG_Passes_Panel_Light(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_passes_panel_light"
+
+
+class OBJECT_PT_TMG_Cam_Passes_Panel_Filter(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_passes_panel_filter"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_passes_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_passes_panel"
+    # COMPAT_ENGINES = {'BLENDER_EEVEE'}
+    bl_options = {"DEFAULT_CLOSED"}
+
+    # @classmethod
+    # def poll(cls, context):
+    #     engine = context.scene.render.engine
+    #     return engine in cls.COMPAT_ENGINES
+
+    def draw_header(self, context):
+        scene = context.scene
+        scene_eevee = scene.eevee
+        rd = scene.render
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        layout.label(text='Filter')
+            
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            if rd.engine == "BLENDER_EEVEE" or rd.engine == "CYCLES":
+                layout.active = True
+            else:
+                layout.active = False
+        else:
+            layout.active = False
+
+    def draw(self, context):
+        scene = context.scene
+        scene_eevee = scene.eevee
+        rd = scene.render
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False
+
+            with_freestyle = bpy.app.build_options.freestyle
+
+            scene = context.scene
+            rd = scene.render
+            view_layer = context.view_layer
+
+            col = layout.column(heading="Include")
+            col.prop(view_layer, "use_sky", text="Environment")
+            col.prop(view_layer, "use_solid", text="Surfaces")
+            col.prop(view_layer, "use_strand", text="Hair")
+            col.prop(view_layer, "use_volumes", text="Volumes")
+
+            col = layout.column(heading="Use")
+            sub = col.row()
+            sub.prop(view_layer, "use_motion_blur", text="Motion Blur")
+            sub.active = rd.use_motion_blur
+            sub = col.row()
+            sub.prop(view_layer.cycles, 'use_denoising', text='Denoising')
+            sub.active = scene.cycles.use_denoising
+
+    
+class OBJECT_PT_TMG_Cam_Passes_Panel_Light(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_passes_panel_light"
+    bl_label = ""
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_passes_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -1831,14 +1916,15 @@ class OBJECT_PT_TMG_Passes_Panel_Light(bpy.types.Panel):
                 layout.prop(view_layer, "use_pass_environment")
                 layout.prop(view_layer, "use_pass_shadow")
                 layout.prop(view_layer, "use_pass_ambient_occlusion", text="Ambient Occlusion")
+                layout.prop(cycles_view_layer, "use_pass_shadow_catcher")
     
     
-class OBJECT_PT_TMG_Passes_Panel_Shader_AOV(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_passes_panel_shader_aov"
+class OBJECT_PT_TMG_Cam_Passes_Panel_Shader_AOV(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_passes_panel_shader_aov"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_passes_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_passes_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -1889,25 +1975,25 @@ class OBJECT_PT_TMG_Passes_Panel_Shader_AOV(bpy.types.Panel):
                         text="Conflicts with another render pass with the same name", icon='ERROR')
     
             
-class OBJECT_PT_TMG_Render_Panel(bpy.types.Panel):
-    bl_idname = 'OBJECT_PT_tmg_render_panel'
+class OBJECT_PT_TMG_Cam_Render_Panel(bpy.types.Panel):
+    bl_idname = 'OBJECT_PT_tmg_cam_render_panel'
     bl_category = 'TMG Camera'
     bl_label = 'Render'
-    bl_context = "objectmode"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_parent_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         pass
 
 
-class OBJECT_PT_TMG_Render_Panel_Aspect(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_aspect"
+class OBJECT_PT_TMG_Cam_Render_Panel_Aspect(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_aspect"
     bl_label = "Aspect"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
@@ -1925,12 +2011,12 @@ class OBJECT_PT_TMG_Render_Panel_Aspect(bpy.types.Panel):
             layout.prop(scene.render, 'pixel_aspect_y', text='Y')
          
 
-class OBJECT_PT_TMG_Render_Panel_Device(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_device"
+class OBJECT_PT_TMG_Cam_Render_Panel_Device(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_device"
     bl_label = "Device"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel"
     COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -1962,12 +2048,12 @@ class OBJECT_PT_TMG_Render_Panel_Device(bpy.types.Panel):
             col.prop(cscene, "shading_system")
 
          
-class OBJECT_PT_TMG_Render_Panel_Film(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_film"
+class OBJECT_PT_TMG_Cam_Render_Panel_Film(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_film"
     bl_label = "Film"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
@@ -1995,175 +2081,38 @@ class OBJECT_PT_TMG_Render_Panel_Film(bpy.types.Panel):
             sub.prop(props, "overscan_size", text="")
 
 
-class OBJECT_PT_TMG_Render_Panel_Cycles_Light_Paths(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
-    bl_label = "Light Paths"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel"
-    COMPAT_ENGINES = {'CYCLES'}
-    bl_options = {"DEFAULT_CLOSED"}
 
-    @classmethod
-    def poll(cls, context):
-        engine = context.scene.render.engine
-        return engine in cls.COMPAT_ENGINES
-
-    # def draw_header_preset(self, context):
-    #     CYCLES_PT_integrator_presets.draw_panel_header(self.layout)
-
-    def draw(self, context):
-        pass
-
-
-class OBJECT_PT_TMG_Render_Panel_Cycles_Max_Bounces(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_cycles_max_bounces"
-    bl_label = "Max Bounces"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
-    COMPAT_ENGINES = {'CYCLES'}
-    bl_options = {"DEFAULT_CLOSED"}
-
-    @classmethod
-    def poll(cls, context):
-        engine = context.scene.render.engine
-        return engine in cls.COMPAT_ENGINES
-
-    def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-
-        scene = context.scene
-        cscene = scene.cycles
-
-        col = layout.column(align=True)
-        col.prop(cscene, "max_bounces", text="Total")
-
-        col = layout.column(align=True)
-        col.prop(cscene, "diffuse_bounces", text="Diffuse")
-        col.prop(cscene, "glossy_bounces", text="Glossy")
-        col.prop(cscene, "transparent_max_bounces", text="Transparency")
-        col.prop(cscene, "transmission_bounces", text="Transmission")
-        col.prop(cscene, "volume_bounces", text="Volume")
-
-
-class OBJECT_PT_TMG_Render_Panel_Cycles_Clamping(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_cycles_clamping"
-    bl_label = "Clamping"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
-    COMPAT_ENGINES = {'CYCLES'}
-    bl_options = {"DEFAULT_CLOSED"}
-
-    @classmethod
-    def poll(cls, context):
-        engine = context.scene.render.engine
-        return engine in cls.COMPAT_ENGINES
-
-    def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-
-        scene = context.scene
-        cscene = scene.cycles
-
-        col = layout.column(align=True)
-        col.prop(cscene, "sample_clamp_direct", text="Direct Light")
-        col.prop(cscene, "sample_clamp_indirect", text="Indirect Light")
-
-
-class OBJECT_PT_TMG_Render_Panel_Cycles_Caustics(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_cycles_caustics"
-    bl_label = "Caustics"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
-    COMPAT_ENGINES = {'CYCLES'}
-    bl_options = {"DEFAULT_CLOSED"}
-
-    @classmethod
-    def poll(cls, context):
-        engine = context.scene.render.engine
-        return engine in cls.COMPAT_ENGINES
-
-    def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-
-        scene = context.scene
-        cscene = scene.cycles
-
-        col = layout.column()
-        col.prop(cscene, "blur_glossy")
-        col = layout.column(heading="Caustics", align=True)
-        col.prop(cscene, "caustics_reflective", text="Reflective")
-        col.prop(cscene, "caustics_refractive", text="Refractive")
-
-
-class OBJECT_PT_TMG_Render_Panel_Cycles_Fast_GI_Approximation(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_cycles_fast_gi_approximation"
-    bl_label = "Fast GI Approximation"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel_cycles_light_paths"
-    COMPAT_ENGINES = {'CYCLES'}
-    bl_options = {"DEFAULT_CLOSED"}
-
-    @classmethod
-    def poll(cls, context):
-        engine = context.scene.render.engine
-        return engine in cls.COMPAT_ENGINES
-
-    def draw_header(self, context):
-        scene = context.scene
-        cscene = scene.cycles
-
-        self.layout.prop(cscene, "use_fast_gi", text="")
-
-    def draw(self, context):
-        scene = context.scene
-        cscene = scene.cycles
-        world = scene.world
-
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-
-        col = layout.column(align=True)
-        col.prop(cscene, "ao_bounces", text="Viewport Bounces")
-        col.prop(cscene, "ao_bounces_render", text="Render Bounces")
-
-        if world:
-          light = world.light_settings
-          col = layout.column(align=True)
-          col.prop(light, "ao_factor", text="AO Factor")
-          col.prop(light, "distance", text="AO Distance")
-  
-  
-class OBJECT_PT_TMG_Render_Panel_Performance(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_performance"
+class OBJECT_PT_TMG_Cam_Render_Panel_Performance(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_performance"
     bl_label = "Performance"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel"
+    COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw(self, context):
         pass
         
         
-class OBJECT_PT_TMG_Render_Panel_Performance_Acceleration_Structure(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_performance_acceleration_structure"
+class OBJECT_PT_TMG_Cam_Render_Panel_Performance_Acc_Structure(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_performance_acceleration_structure"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel_performance"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel_performance"
+    COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw_header(self, context):
         scene = context.scene
@@ -2222,13 +2171,19 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Acceleration_Structure(bpy.types.Pa
                 layout.active = False
         
         
-class OBJECT_PT_TMG_Render_Panel_Performance_Final_Render(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_performance_final_render"
+class OBJECT_PT_TMG_Cam_Render_Panel_Performance_Final_Render(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_performance_final_render"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel_performance"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel_performance"
+    COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw_header(self, context):
         scene = context.scene
@@ -2262,7 +2217,7 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Final_Render(bpy.types.Panel):
 
             col = layout.column()
 
-            col.prop(rd, "use_save_buffers")
+            # col.prop(rd, "use_save_buffers")
             col.prop(rd, "use_persistent_data", text="Persistent Data")
             
             if rd.engine == "CYCLES":
@@ -2271,13 +2226,19 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Final_Render(bpy.types.Panel):
                 layout.active = False
         
         
-class OBJECT_PT_TMG_Render_Panel_Performance_Tiles(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_performance_tiles"
+class OBJECT_PT_TMG_Cam_Render_Panel_Performance_Tiles(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_performance_tiles"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel_performance"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel_performance"
+    COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw_header(self, context):
         scene = context.scene
@@ -2312,14 +2273,10 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Tiles(bpy.types.Panel):
 
             col = layout.column()
 
-            sub = col.column(align=True)
-            sub.prop(rd, "tile_x", text="Tiles X")
-            sub.prop(rd, "tile_y", text="Y")
-            col.prop(cscene, "tile_order", text="Order")
-
+            col.prop(cscene, "use_auto_tile")
             sub = col.column()
-            sub.active = not rd.use_save_buffers and not cscene.use_adaptive_sampling
-            sub.prop(cscene, "use_progressive_refine")
+            sub.active = cscene.use_auto_tile
+            sub.prop(cscene, "tile_size")
             
             if rd.engine == "CYCLES":
                 layout.active = True
@@ -2327,13 +2284,19 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Tiles(bpy.types.Panel):
                 layout.active = False
         
         
-class OBJECT_PT_TMG_Render_Panel_Performance_Threads(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_performance_threads"
+class OBJECT_PT_TMG_Cam_Render_Panel_Performance_Threads(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_performance_threads"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel_performance"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel_performance"
+    COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw_header(self, context):
         scene = context.scene
@@ -2376,13 +2339,19 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Threads(bpy.types.Panel):
                 layout.active = False
         
         
-class OBJECT_PT_TMG_Render_Panel_Performance_Viewport(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_viewport"
+class OBJECT_PT_TMG_Cam_Render_Panel_Performance_Viewport(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_viewport"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel_performance"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel_performance"
+    COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw_header(self, context):
         scene = context.scene
@@ -2417,20 +2386,20 @@ class OBJECT_PT_TMG_Render_Panel_Performance_Viewport(bpy.types.Panel):
 
             col = layout.column()
             col.prop(rd, "preview_pixel_size", text="Pixel Size")
-            col.prop(cscene, "preview_start_resolution", text="Start Pixels")
+            # col.prop(cscene, "preview_start_resolution", text="Start Pixels")
             
             if rd.engine == "CYCLES":
                 layout.active = True
             else:
                 layout.active = False
         
-        
-class OBJECT_PT_TMG_Render_Panel_Resolution(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_resolution"
+
+class OBJECT_PT_TMG_Cam_Render_Panel_Resolution(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_resolution"
     bl_label = "Resolution"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
@@ -2480,24 +2449,24 @@ class OBJECT_PT_TMG_Render_Panel_Resolution(bpy.types.Panel):
             layout.prop(scene.render, 'resolution_percentage', text="%")
             
             
-class OBJECT_PT_TMG_Render_Panel_Sampling(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_sampling"
+class OBJECT_PT_TMG_Cam_Render_Panel_Sampling(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_sampling"
     bl_label = "Sampling"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         pass      
             
             
-class OBJECT_PT_TMG_Render_Panel_Sampling_Advanced(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_sampling_advanced"
+class OBJECT_PT_TMG_Cam_Render_Panel_Sampling_Advanced(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_sampling_advanced"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel_sampling"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel_sampling"
     COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -2543,10 +2512,18 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Advanced(bpy.types.Panel):
             row.prop(cscene, "use_animated_seed", text="", icon='TIME')
 
             col = layout.column(align=True)
-            col.active = not(cscene.use_adaptive_sampling)
+            col.active = not (cscene.use_adaptive_sampling and cscene.use_preview_adaptive_sampling)
             col.prop(cscene, "sampling_pattern", text="Pattern")
 
-            layout.prop(cscene, "use_square_samples")
+            layout.separator()
+
+            col = layout.column(align=True)
+            col.active = not (cscene.use_adaptive_sampling and cscene.use_preview_adaptive_sampling)
+            col.prop(cscene, "scrambling_distance", text="Multiplier")
+            col.prop(cscene, "auto_scrambling_distance", text="Automatic")
+            sub = col.row(align=True)
+            sub.active = not cscene.use_preview_adaptive_sampling
+            sub.prop(cscene, "preview_scrambling_distance", text="Viewport")
 
             layout.separator()
 
@@ -2555,29 +2532,19 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Advanced(bpy.types.Panel):
             col.prop(cscene, "min_transparent_bounces")
             col.prop(cscene, "light_sampling_threshold", text="Light Threshold")
 
-            if cscene.progressive != 'PATH' and use_branched_path(context):
-                col = layout.column(align=True)
-                col.prop(cscene, "sample_all_lights_direct")
-                col.prop(cscene, "sample_all_lights_indirect")
-
             for view_layer in scene.view_layers:
                 if view_layer.samples > 0:
                     layout.separator()
                     layout.row().prop(cscene, "use_layer_samples")
                     break
-                
-            if rd.engine == "CYCLES":
-                layout.active = True
-            else:
-                layout.active = False
        
             
-class OBJECT_PT_TMG_Render_Panel_Sampling_Denoising(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_sampling_denoising"
+class OBJECT_PT_TMG_Cam_Render_Panel_Sampling_Denoising(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_sampling_denoising"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel_sampling"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel_sampling"
     COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -2606,6 +2573,52 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Denoising(bpy.types.Panel):
         tmg_cam_vars = scene.tmg_cam_vars
     
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            layout = self.layout
+
+            layout.active = True
+        else:
+            layout.active = False
+
+
+class OBJECT_PT_TMG_Cam_Render_Panel_S_Denoising_Render(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_s_denoising_render"
+    bl_label = ""
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel_sampling_denoising"
+    COMPAT_ENGINES = {'CYCLES'}
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
+    def draw_header(self, context):
+        scene = context.scene
+        scene_eevee = scene.eevee
+        rd = scene.render
+        cscene = scene.cycles
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+
+        row = layout.row(align=True)
+        row.prop(cscene, "use_denoising", text="Render")
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA" and cscene.use_denoising:
+            layout.active = True
+        else:
+            layout.active = False
+
+    def draw(self, context):
+        scene = context.scene
+        scene_eevee = scene.eevee
+        rd = scene.render
+        cscene = scene.cycles
+        tmg_cam_vars = scene.tmg_cam_vars
+    
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
             camera = tmg_cam_vars.scene_camera
                 
             layout = self.layout
@@ -2613,50 +2626,146 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Denoising(bpy.types.Panel):
             layout.use_property_decorate = False  # No animation.
             layout = layout.column()
             
-            heading = layout.column(align=True, heading="Render")
-            row = heading.row(align=True)
-            row.prop(cscene, "use_denoising", text="")
-            sub = row.row()
+            col = layout.column()
+            col.active = cscene.use_denoising
+            col.prop(cscene, "denoiser", text="Denoiser")
+            col.prop(cscene, "denoising_input_passes", text="Passes")
+            if cscene.denoiser == 'OPENIMAGEDENOISE':
+                col.prop(cscene, "denoising_prefilter", text="Prefilter")
+            
+            layout.active = True
+        else:
+            layout.active = False
 
-            sub.active = cscene.use_denoising
-            for view_layer in scene.view_layers:
-                if view_layer.cycles.denoising_store_passes:
-                    sub.active = True
 
-            sub.prop(cscene, "denoiser", text="")
+class OBJECT_PT_TMG_Cam_Render_Panel_S_Denoising_Viewport(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_s_denoising_viewport"
+    bl_label = ""
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel_sampling_denoising"
+    COMPAT_ENGINES = {'CYCLES'}
+    bl_options = {"DEFAULT_CLOSED"}
 
-            layout.separator()
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
-            heading = layout.column(align=False, heading="Viewport")
-            row = heading.row(align=True)
-            row.prop(cscene, "use_preview_denoising", text="")
-            sub = row.row()
-            sub.active = cscene.use_preview_denoising
-            sub.prop(cscene, "preview_denoiser", text="")
+    def draw_header(self, context):
+        scene = context.scene
+        scene_eevee = scene.eevee
+        rd = scene.render
+        cscene = scene.cycles
+        tmg_cam_vars = scene.tmg_cam_vars
+        
+        layout = self.layout
+        row = layout.row(align=True)
+        row.prop(cscene, "use_preview_denoising", text="Viewport")
+        
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA" and cscene.use_preview_denoising:
+            layout.active = True
+        else:
+            layout.active = False
 
-            sub = heading.row(align=True)
-            sub.active = cscene.use_preview_denoising
-            sub.prop(cscene, "preview_denoising_start_sample", text="Start Sample")
-            sub = heading.row(align=True)
-            sub.active = cscene.use_preview_denoising
-            sub.prop(cscene, "preview_denoising_input_passes", text="Input Passes")
+    def draw(self, context):
+        scene = context.scene
+        scene_eevee = scene.eevee
+        rd = scene.render
+        cscene = scene.cycles
+        tmg_cam_vars = scene.tmg_cam_vars
+    
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            camera = tmg_cam_vars.scene_camera
+                
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()
+
+            col = layout.column()
+            col.active = cscene.use_preview_denoising
+            col.prop(cscene, "preview_denoiser", text="Denoiser")
+            col.prop(cscene, "preview_denoising_input_passes", text="Passes")
+            col.prop(cscene, "preview_denoising_start_sample", text="Start Sample")
             
             layout.active = True
         else:
             layout.active = False
          
 
-class OBJECT_PT_TMG_Render_Panel_Sampling_Samples(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_sampling_samples"
+class OBJECT_PT_TMG_Cam_Render_Panel_Sampling_Samples(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_sampling_samples"
     bl_label = "Samples"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel_sampling"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel_sampling"
+    COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
 
     def draw(self, context):
         scene = context.scene
         props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+    
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":            
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+            layout = layout.column()
+
+            layout.prop(props, "taa_render_samples", text="Render")
+            layout.prop(props, "taa_samples", text="Viewport")
+            layout.prop(props, "use_taa_reprojection")
+
+
+class OBJECT_PT_TMG_Cam_Render_Panel_Cycles_Sampling_Samples(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_cycles_sampling_samples"
+    bl_label = "Samples"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel_sampling"
+    COMPAT_ENGINES = {'CYCLES'}
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
+    def draw(self, context):
+        scene = context.scene
+        tmg_cam_vars = scene.tmg_cam_vars
+    
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":            
+            layout = self.layout
+
+
+class OBJECT_PT_TMG_Cam_Render_Panel_Cycles_Sampling_Samples_Render(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_cycles_sampling_samples_render"
+    bl_label = "Render"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel_cycles_sampling_samples"
+    COMPAT_ENGINES = {'CYCLES'}
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
+    def draw(self, context):
+        scene = context.scene
+        scene_eevee = scene.eevee
+        cscene = scene.cycles
+        props = scene.eevee
+        rd = scene.render
         tmg_cam_vars = scene.tmg_cam_vars
     
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
@@ -2667,17 +2776,72 @@ class OBJECT_PT_TMG_Render_Panel_Sampling_Samples(bpy.types.Panel):
             layout.use_property_decorate = False  # No animation.
             layout = layout.column()
 
-            layout.prop(props, "taa_render_samples", text="Render")
-            layout.prop(props, "taa_samples", text="Viewport")
-            layout.prop(props, "use_taa_reprojection")
+            heading = layout.column(align=True, heading="Noise Threshold")
+            row = heading.row(align=True)
+            row.prop(cscene, "use_adaptive_sampling", text="")
+            sub = row.row()
+            sub.active = cscene.use_adaptive_sampling
+            sub.prop(cscene, "adaptive_threshold", text="")
+
+            col = layout.column(align=True)
+            if cscene.use_adaptive_sampling:
+                col.prop(cscene, "samples", text=" Max Samples")
+                col.prop(cscene, "adaptive_min_samples", text="Min Samples")
+            else:
+                col.prop(cscene, "samples", text="Samples")
+            col.prop(cscene, "time_limit")
+
+
+class OBJECT_PT_TMG_Cam_Render_Panel_Cycles_Sampling_Samples_Viewport(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_cycles_sampling_samples_viewport"
+    bl_label = "Viewport"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel_cycles_sampling_samples"
+    COMPAT_ENGINES = {'CYCLES'}
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return engine in cls.COMPAT_ENGINES
+
+    def draw(self, context):
+        scene = context.scene
+        scene_eevee = scene.eevee
+        cscene = scene.cycles
+        props = scene.eevee
+        rd = scene.render
+        tmg_cam_vars = scene.tmg_cam_vars
+    
+        if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+            camera = tmg_cam_vars.scene_camera
+            
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False  # No animation.
+
+            heading = layout.column(align=True, heading="Noise Threshold")
+            row = heading.row(align=True)
+            row.prop(cscene, "use_preview_adaptive_sampling", text="")
+            sub = row.row()
+            sub.active = cscene.use_preview_adaptive_sampling
+            sub.prop(cscene, "preview_adaptive_threshold", text="")
+
+            if cscene.use_preview_adaptive_sampling:
+                col = layout.column(align=True)
+                col.prop(cscene, "preview_samples", text=" Max Samples")
+                col.prop(cscene, "preview_adaptive_min_samples", text="Min Samples")
+            else:
+                layout.prop(cscene, "preview_samples", text="Samples")
 
           
-class OBJECT_PT_TMG_Render_Panel_Timeline(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_render_panel_timeline"
+class OBJECT_PT_TMG_Cam_Render_Panel_Timeline(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_render_panel_timeline"
     bl_label = "Timeline"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_render_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_render_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
@@ -2727,25 +2891,25 @@ class OBJECT_PT_TMG_Render_Panel_Timeline(bpy.types.Panel):
 #                row.prop(scene, "frame_current", text="")
      
           
-class OBJECT_PT_TMG_Scene_Effects_Panel(bpy.types.Panel):
-    bl_idname = 'OBJECT_PT_tmg_scene_effects_panel'
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel(bpy.types.Panel):
+    bl_idname = 'OBJECT_PT_tmg_cam_scene_effects_panel'
     bl_category = 'TMG Camera'
     bl_label = 'Scene Effects'
-    bl_context = "objectmode"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_parent_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         pass
     
         
-class OBJECT_PT_TMG_Scene_Effects_Panel_AO(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_ao"
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_AO(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_scene_effects_panel_ao"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -2803,12 +2967,12 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_AO(bpy.types.Panel):
                 layout.active = False
                
             
-class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_bloom"
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Bloom(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_scene_effects_panel_bloom"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -2866,12 +3030,12 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Bloom(bpy.types.Panel):
                 layout.active = False
 
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Color_M(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_color_m"
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Color_M(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_scene_effects_panel_color_m"
     bl_label = "Color Management"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -2907,12 +3071,12 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Color_M(bpy.types.Panel):
             col.prop(scene.sequencer_colorspace_settings, "name", text="Sequencer")
 
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Color_M_Use_Curves(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_color_m_use_curves"
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Color_M_Use_Curves(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_scene_effects_panel_color_m_use_curves"
     bl_label = "Use Curves"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_color_m"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel_color_m"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -2939,12 +3103,12 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Color_M_Use_Curves(bpy.types.Panel):
             layout.template_curve_mapping(view, "curve_mapping", type='COLOR', levels=True)
 
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_depth_of_field"
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Depth_Of_Field(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_scene_effects_panel_depth_of_field"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -2982,12 +3146,12 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field(bpy.types.Panel):
             layout.prop(dof, 'focus_object')
 
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Aperture(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_depth_of_aperture"
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Depth_Of_Field_Aperture(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_scene_effects_panel_depth_of_aperture"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_depth_of_field"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel_depth_of_field"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -3029,12 +3193,12 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Aperture(bpy.types.Panel)
             layout.prop(dof, "aperture_ratio")
 
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Bokeh(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_depth_of_bokeh"
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Depth_Of_Field_Bokeh(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_scene_effects_panel_depth_of_bokeh"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_depth_of_field"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel_depth_of_field"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -3081,12 +3245,12 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Depth_Of_Field_Bokeh(bpy.types.Panel):
             layout.prop(props, "bokeh_overblur")
 
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Motion_Blur(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_motion_blur"
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Motion_Blur(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_scene_effects_panel_motion_blur"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -3126,12 +3290,39 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Motion_Blur(bpy.types.Panel):
             layout.prop(props, "motion_blur_steps", text="Steps")
 
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Screen_Space_Reflections(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_screen_space_reflections"
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Post_Processing(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_scene_effects_panel_post_processing"
+    bl_label = "Post Processing"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw(self, context):
+        scene = context.scene
+        props = scene.eevee
+        tmg_cam_vars = scene.tmg_cam_vars
+
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+        layout = layout.column(align=False)
+
+        rd = context.scene.render
+
+        col = layout.column(align=True, heading="Pipeline")
+        col.prop(rd, "use_compositing")
+        col.prop(rd, "use_sequencer")
+
+        layout.prop(rd, "dither_intensity", text="Dither", slider=True)
+
+
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Screen_Space_Reflections(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_scene_effects_panel_screen_space_reflections"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -3193,12 +3384,12 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Screen_Space_Reflections(bpy.types.Panel
             self.layout.active = False    
             
             
-class OBJECT_PT_TMG_Scene_Effects_Panel_Shadows(bpy.types.Panel):
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Shadows(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_sffects_panel_shadows"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -3246,12 +3437,12 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Shadows(bpy.types.Panel):
             self.layout.active = False 
 
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Stereoscopy(bpy.types.Panel):
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Stereoscopy(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_sffects_panel_stereoscopy"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -3309,12 +3500,12 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Stereoscopy(bpy.types.Panel):
                 row.prop(rv, "camera_suffix")
 
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Subsurface_Scattering(bpy.types.Panel):
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Subsurface_Scattering(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tmg_scene_sffects_panel_subsurface_scattering"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -3360,12 +3551,12 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Subsurface_Scattering(bpy.types.Panel):
             self.layout.active = False 
             
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_volumetrics_eevee"
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Vol_Eevee(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_scene_effects_panel_volumetrics_eevee"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -3407,12 +3598,12 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee(bpy.types.Panel):
             self.layout.active = False 
 
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Samples(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_volumetrics_eevee_samples"
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Volumetrics_Eevee_Samples(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_scene_effects_panel_volumetrics_eevee_samples"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_volumetrics_eevee"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel_volumetrics_eevee"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -3450,11 +3641,11 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Samples(bpy.types.Pane
             self.layout.active = False 
 
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Lighting(bpy.types.Panel):
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Vol_Eevee_Lighting(bpy.types.Panel):
     bl_label = "Lighting"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_volumetrics_eevee"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel_volumetrics_eevee"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -3490,11 +3681,11 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Lighting(bpy.types.Pan
             self.layout.active = False 
 
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Shadows(bpy.types.Panel):
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Volumetrics_Eevee_Shadows(bpy.types.Panel):
     bl_label = "Shadows"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel_volumetrics_eevee"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel_volumetrics_eevee"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -3529,12 +3720,12 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Eevee_Shadows(bpy.types.Pane
             self.layout.active = False 
 
 
-class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Cycles(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_scene_effects_panel_volumetrics_cycles"
+class OBJECT_PT_TMG_Cam_Scene_Effects_Panel_Volumetrics_Cycles(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_scene_effects_panel_volumetrics_cycles"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_scene_effects_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_scene_effects_panel"
     COMPAT_ENGINES = {'CYCLES'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -3576,26 +3767,75 @@ class OBJECT_PT_TMG_Scene_Effects_Panel_Volumetrics_Cycles(bpy.types.Panel):
             self.layout.active = False 
 
 
-class OBJECT_PT_TMG_Selected_Object_Panel(bpy.types.Panel):
-    bl_idname = 'OBJECT_PT_tmg_selected_object_panel'
+class OBJECT_PT_TMG_Cam_Selected_Object_Panel(bpy.types.Panel):
+    bl_idname = 'OBJECT_PT_tmg_cam_selected_object_panel'
     bl_category = 'TMG Camera'
     bl_label = 'Selected Object'
-    bl_context = "objectmode"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_parent_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
-        pass
+        if bpy.context.active_object.type != "LIGHT":
+            layout = self.layout
+            layout.use_property_split = True
+            layout.use_property_decorate = False 
+            layout.label(text="Please Select a Light")
 
 
-class OBJECT_PT_TMG_S_OB_Name(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_s_ob_name"
+# class OBJECT_PT_TMG_S_OB_Name(bpy.types.Panel):
+#     bl_idname = "OBJECT_PT_tmg_s_ob_name"
+#     bl_category = 'TMG Camera'
+#     bl_label = "Name"
+#     bl_space_type = "VIEW_3D"
+#     bl_region_type = "UI"
+#     bl_parent_id = "OBJECT_PT_tmg_cam_selected_object_panel"
+#     bl_options = {"DEFAULT_CLOSED"}
+
+#     @classmethod
+#     def poll(cls, context):
+#         if bpy.context.active_object:
+#             ob = context.active_object
+#         else:
+#             ob = None
+#         return ob
+
+#     def draw(self, context):
+#         scene = context.scene
+#         props = scene.eevee
+#         tmg_cam_vars = scene.tmg_cam_vars
+
+#         layout = self.layout
+#         layout.use_property_split = True
+#         layout.use_property_decorate = False 
+
+#         # if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
+#         if bpy.context.active_object:
+#             ob = context.active_object
+#         else:
+#             ob = None
+
+#         if ob:
+#             layout = layout.column()
+#             layout.prop(tmg_cam_vars, 'ob_name_lock')
+            
+#             if tmg_cam_vars.ob_name_lock:
+#                 layout.prop(tmg_cam_vars, 'ob_name')
+#             else:
+#                 layout.prop(tmg_cam_vars, 'ob_name')
+
+#                 if bpy.context.active_object.data != None:
+#                     layout.prop(tmg_cam_vars, 'ob_data_name')
+
+
+class OBJECT_PT_TMG_Cam_S_OB_Name(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_s_ob_name"
     bl_category = 'TMG Camera'
     bl_label = "Name"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_selected_object_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_selected_object_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     @classmethod
@@ -3634,13 +3874,13 @@ class OBJECT_PT_TMG_S_OB_Name(bpy.types.Panel):
                     layout.prop(tmg_cam_vars, 'ob_data_name')
 
 
-class OBJECT_PT_TMG_EEVEE_Light(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_eevee_light"
+class OBJECT_PT_TMG_Cam_EEVEE_Light(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_eevee_light"
     bl_category = 'TMG Camera'
     bl_label = "Light"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_selected_object_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_selected_object_panel"
     bl_options = {"DEFAULT_CLOSED"}
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
 
@@ -3683,12 +3923,12 @@ class OBJECT_PT_TMG_EEVEE_Light(bpy.types.Panel):
             col.prop(light, "volume_factor", text="Volume")
 
 
-class OBJECT_PT_TMG_EEVEE_Light_Distance(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_eevee_light_distance"
+class OBJECT_PT_TMG_Cam_EEVEE_Light_Distance(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_eevee_light_distance"
     bl_label = "Custom Distance"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_eevee_light"
+    bl_parent_id = "OBJECT_PT_tmg_cam_eevee_light"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -3722,12 +3962,12 @@ class OBJECT_PT_TMG_EEVEE_Light_Distance(bpy.types.Panel):
             # layout.active = light.use_custom_distance
 
 
-class OBJECT_PT_TMG_EEVEE_Light_Beam_Shape(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_eevee_light_beam_shape"
+class OBJECT_PT_TMG_Cam_EEVEE_Light_Beam_Shape(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_eevee_light_beam_shape"
     bl_label = "Beam Shape"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_eevee_light"
+    bl_parent_id = "OBJECT_PT_tmg_cam_eevee_light"
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -3783,13 +4023,13 @@ class OBJECT_PT_TMG_EEVEE_Light_Beam_Shape(bpy.types.Panel):
                 layout.prop(light, "angle", text="Angle")
 
 
-class OBJECT_PT_TMG_CYCLES_Light(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_cycles_light"
+class OBJECT_PT_TMG_Cam_CYCLES_Light(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_cycles_light"
     bl_category = 'TMG Camera'
     bl_label = "Light"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_selected_object_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_selected_object_panel"
     bl_options = {"DEFAULT_CLOSED"}
     COMPAT_ENGINES = {'CYCLES'}
 
@@ -3845,14 +4085,14 @@ class OBJECT_PT_TMG_CYCLES_Light(bpy.types.Panel):
                 col.prop(clamp, "is_portal", text="Portal")
 
 
-class OBJECT_PT_TMG_CYCLES_Light_Beam_Shape(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_cycles_light_beam_shape"
+class OBJECT_PT_TMG_Cam_CYCLES_Light_Beam_Shape(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_cycles_light_beam_shape"
     bl_category = 'TMG Camera'
     bl_label = "Beam Shape"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_context = "data"
-    bl_parent_id = "OBJECT_PT_tmg_cycles_light"
+    bl_parent_id = "OBJECT_PT_tmg_cam_cycles_light"
     bl_options = {"DEFAULT_CLOSED"}
     COMPAT_ENGINES = {'CYCLES'}
 
@@ -3909,13 +4149,13 @@ class OBJECT_PT_TMG_CYCLES_Light_Beam_Shape(bpy.types.Panel):
                 col.prop(light, "spread", text="Spread")
 
 
-class OBJECT_PT_TMG_Light_Randomize(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_light_randomize"
+class OBJECT_PT_TMG_Cam_Light_Randomize(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_light_randomize"
     bl_category = 'TMG Camera'
     bl_label = "Randomize"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_selected_object_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_selected_object_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     @classmethod
@@ -3943,13 +4183,13 @@ class OBJECT_PT_TMG_Light_Randomize(bpy.types.Panel):
             layout.operator("object.tmg_randomize_light", text="Randomize Light", icon="LIGHT")
 
 
-class OBJECT_PT_TMG_Light_Randomize_Options(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_light_randomize_options"
+class OBJECT_PT_TMG_Cam_Light_Randomize_Options(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_light_randomize_options"
     bl_category = 'TMG Camera'
     bl_label = "Limits"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_light_randomize"
+    bl_parent_id = "OBJECT_PT_tmg_cam_light_randomize"
     bl_options = {"DEFAULT_CLOSED"}
 
     @classmethod
@@ -4099,25 +4339,25 @@ class OBJECT_PT_TMG_Light_Randomize_Options(bpy.types.Panel):
 
 
 
-class OBJECT_PT_TMG_Viewport_Panel(bpy.types.Panel):
-    bl_idname = 'OBJECT_PT_tmg_viewport_panel'
+class OBJECT_PT_TMG_Cam_Viewport_Panel(bpy.types.Panel):
+    bl_idname = 'OBJECT_PT_tmg_cam_viewport_panel'
     bl_category = 'TMG Camera'
     bl_label = 'Viewport'
-    bl_context = "objectmode"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "OBJECT_PT_tmg_cam_parent_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         pass
 
 
-class OBJECT_PT_TMG_Viewport_Panel_Composition(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_viewport_panel_composition"
+class OBJECT_PT_TMG_Cam_Viewport_Panel_Composition(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_viewport_panel_composition"
     bl_label = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_viewport_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_viewport_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw_header(self, context):
@@ -4167,12 +4407,12 @@ class OBJECT_PT_TMG_Viewport_Panel_Composition(bpy.types.Panel):
             col.prop(camera.data, "show_composition_harmony_tri_b", text="Triangle B")
 
 
-class OBJECT_PT_TMG_Viewport_Panel_Display(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_viewport_panel_display"
+class OBJECT_PT_TMG_Cam_Viewport_Panel_Display(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_viewport_panel_display"
     bl_label = "Display"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_viewport_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_viewport_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
@@ -4207,12 +4447,12 @@ class OBJECT_PT_TMG_Viewport_Panel_Display(bpy.types.Panel):
             sub.prop(tmg_cam_vars, "camera_passepartout_alpha", text="")
         
         
-class OBJECT_PT_TMG_Viewport_Panel_User_Preferences(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_viewport_panel_user_preferences"
+class OBJECT_PT_TMG_Cam_Viewport_Panel_User_Preferences(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_viewport_panel_user_preferences"
     bl_label = "User Preferences"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_viewport_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_viewport_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
@@ -4240,12 +4480,12 @@ class OBJECT_PT_TMG_Viewport_Panel_User_Preferences(bpy.types.Panel):
             layout.prop(view, "render_display_type", text='Render In')
             
             
-class OBJECT_PT_TMG_Viewport_Panel_View(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_tmg_viewport_panel_view"
+class OBJECT_PT_TMG_Cam_Viewport_Panel_View(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_tmg_cam_viewport_panel_view"
     bl_label = "View"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = "OBJECT_PT_tmg_viewport_panel"
+    bl_parent_id = "OBJECT_PT_tmg_cam_viewport_panel"
     bl_options = {"DEFAULT_CLOSED"}
             
     def draw(self, context):
