@@ -2,7 +2,7 @@
 A blender 2.9x addon for managing camera settings
 
 Download Latest Stable Versions
-* [(0.2.7)](https://github.com/Mainman002/TMG-Camera-Tools/releases/tag/0.2.7)
+* [(0.2.8)](https://github.com/Mainman002/TMG-Camera-Tools/releases/tag/0.2.8)
 
 Tutorial showcasing current features
 * https://youtu.be/zCAL6O8KqP0
