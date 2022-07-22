@@ -336,6 +336,21 @@ def _set_cam_res_values(self, context):
         scene.render.resolution_x = int( tmp_di["x"] )
         scene.render.resolution_y = int( tmp_di["y"] )
     
+
+def _update_composite_output(scene, context):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+
+    if scene.use_nodes:
+        for node in scene.node_tree.nodes:
+            if node.name == "File Output":
+                # print( node.path )
+                node.base_path = scene.render.filepath
+                # scene.node_tree.nodes['File Output'].file_slots['Image'].path = str( tmg_cam_vars.render_filename )
+                for slot in node.file_slots:
+                    if slot.path != tmg_cam_vars.render_filename:
+                        slot.path = tmg_cam_vars.render_filename
+
     
 def _change_scene_camera(self, context):
     scene = context.scene
@@ -348,10 +363,18 @@ def _change_scene_camera(self, context):
         bpy.context.space_data.camera = camera
         tmg_cam_vars.camera_name = camera.name
 
+        if "render_filename" in camera:
+            pass
+        else:
+            camera["render_filename"] = str( "image" )
+
         if "render_path" in camera:
             pass
         else:
             camera["render_path"] = str( "//" )
+        
+        scene.render.filepath = camera["render_path"] + camera["render_filename"] # + get_filename_extension(self, context)
+        _update_composite_output(scene, context)
 
         if "res_x" in camera:
             pass
@@ -397,10 +420,13 @@ def _change_scene_camera(self, context):
         tmg_cam_vars.cam_sensor_format = str( _get_custom_property(camera, "sensor_profile") )
         tmg_cam_vars.cam_resolution_presets = str( _get_custom_property(camera, "resolution") )
         tmg_cam_vars.cam_resolution_mode_presets = str( _get_custom_property(camera, "res_mode") )
-
-        scene.render.filepath = _get_custom_property( camera, "render_path" )
-        tmg_cam_vars.render_path = _get_custom_property( camera, "render_path" )
         
+        scene.render.filepath = _get_custom_property( camera, "render_path" ) #+ tmg_cam_vars.render_filename
+        tmg_cam_vars.render_path = _get_custom_property( camera, "render_path" )
+
+        # scene.render.render_filename = _get_custom_property( camera, "render_filename" )
+        tmg_cam_vars.render_filename = _get_custom_property( camera, "render_filename" )
+
         active_dict['type'] = camera.data.type
         active_dict['focal_l'] = camera.data.lens 
         active_dict['sensor_w'] = camera.data.sensor_width
@@ -783,7 +809,65 @@ def _render_path_changed(self, context):
     camera = tmg_cam_vars.scene_camera
 
     _set_custom_property( camera, "render_path", str( tmg_cam_vars.render_path ) )
-    scene.render.filepath = str( _get_custom_property(camera, "render_path") )
+    tmg_cam_vars.render_filename = camera["render_filename"] 
+    # scene.render.filepath = _get_custom_property(camera, "render_path") + tmg_cam_vars.render_filename
+    scene.render.filepath = camera["render_path"] #+ camera["render_filename"] # + get_filename_extension(self, context)
+    _update_composite_output(scene, context)
+
+
+def get_filename_extension(self, context):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    fileext = ".png"
+
+    if scene.render.image_settings.file_format == "FFMPEG":
+        fileext = ".mp4"
+    elif scene.render.image_settings.file_format == "PNG":
+        fileext = ".png"
+    elif scene.render.image_settings.file_format == "BMP":
+        fileext = ".bmp"
+    elif scene.render.image_settings.file_format == "PNG":
+        fileext = ".png"
+    elif scene.render.image_settings.file_format == "TIFF":
+        fileext = ".tiff"
+    elif scene.render.image_settings.file_format == "JPEG":
+        fileext = ".jpg"
+    elif scene.render.image_settings.file_format == "JPEG2000":
+        fileext = ".jpg"
+    elif scene.render.image_settings.file_format == "TARGA":
+        fileext = ".tga"
+    elif scene.render.image_settings.file_format == "TARGA_RAW":
+        fileext = ".tga"
+    elif scene.render.image_settings.file_format == "AVI_JPEG":
+        fileext = ".avi"
+    elif scene.render.image_settings.file_format == "AVI_RAW":
+        fileext = ".avi"
+    elif scene.render.image_settings.file_format == "WEBP":
+        fileext = ".webp"
+    elif scene.render.image_settings.file_format == "OPEN_EXR":
+        fileext = ".exr"
+    elif scene.render.image_settings.file_format == "OPEN_EXR_MULTILAYER":
+        fileext = ".exr"
+    elif scene.render.image_settings.file_format == "HDR":
+        fileext = ".hdr"
+    elif scene.render.image_settings.file_format == "DPX":
+        fileext = ".dpx"
+    elif scene.render.image_settings.file_format == "CINEON":
+        fileext = ".cineon"
+    elif scene.render.image_settings.file_format == "IRIS":
+        fileext = ".iris"
+    return fileext
+
+
+def _render_filename_changed(self, context):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    camera = tmg_cam_vars.scene_camera
+
+    _set_custom_property( camera, "render_filename", str( tmg_cam_vars.render_filename ) )
+    _set_custom_property( camera, "render_path", str( tmg_cam_vars.render_path ) )
+    scene.render.filepath = camera["render_path"] #+ camera["render_filename"] # + get_filename_extension(self, context)
+    _update_composite_output(scene, context)
 
 
 class OBJECT_OT_TMG_Cam_Randomize_Selected_Light(bpy.types.Operator):
@@ -818,8 +902,9 @@ class TMG_Cam_Properties(bpy.types.PropertyGroup):
     ob_name : bpy.props.StringProperty(name='Object', default='Object', set=_set_ob_name, get=_get_ob_name)
     ob_data_name : bpy.props.StringProperty(name='Data', default='Object', set=_set_ob_data_name, get=_get_ob_data_name)
 
-    render_path : StringProperty(name="Path",description="Path to Directory",default="",maxlen=1024,subtype='DIR_PATH', update=_render_path_changed)
+    render_path : StringProperty(name="Path",description="Path to Directory",default="//",maxlen=1024,subtype='DIR_PATH', update=_render_path_changed)
     render_slot : bpy.props.IntProperty(default=1, min=1, max=8, options={'ANIMATABLE'}, update=_set_render_slot)
+    render_filename : StringProperty(name="Filename",description="Render file name",default="image.",maxlen=1024, update=_render_filename_changed)
     
     curve_lock_scale : bpy.props.BoolProperty(default=False)
     curve_size_x : bpy.props.FloatProperty(default=1, min=0.01, update=_curve_size)
@@ -1554,6 +1639,7 @@ class OBJECT_PT_TMG_Cam_Output_Panel_Image(bpy.types.Panel):
             layout.use_property_decorate = False  # No animation.
 
             layout.prop(tmg_cam_vars, 'render_path', text='')
+            layout.prop(tmg_cam_vars, 'render_filename', text='')
             
             row = layout.row(align=True)
             row.operator("render.render", text='Image', icon="CAMERA_DATA")
@@ -1581,7 +1667,7 @@ class OBJECT_PT_TMG_Cam_Output_Panel_Image_Settings(bpy.types.Panel):
             layout.use_property_decorate = False  # No animation.
 
             rd = context.scene.render
-            # image_settings = rd.image_settings
+            image_settings = rd.image_settings
 
             layout.prop(scene, 'use_nodes')
 
