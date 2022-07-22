@@ -348,6 +348,11 @@ def _change_scene_camera(self, context):
         bpy.context.space_data.camera = camera
         tmg_cam_vars.camera_name = camera.name
 
+        if "render_path" in camera:
+            pass
+        else:
+            camera["render_path"] = str( "//" )
+
         if "res_x" in camera:
             pass
         else:
@@ -392,6 +397,9 @@ def _change_scene_camera(self, context):
         tmg_cam_vars.cam_sensor_format = str( _get_custom_property(camera, "sensor_profile") )
         tmg_cam_vars.cam_resolution_presets = str( _get_custom_property(camera, "resolution") )
         tmg_cam_vars.cam_resolution_mode_presets = str( _get_custom_property(camera, "res_mode") )
+
+        scene.render.filepath = _get_custom_property( camera, "render_path" )
+        tmg_cam_vars.render_path = _get_custom_property( camera, "render_path" )
         
         active_dict['type'] = camera.data.type
         active_dict['focal_l'] = camera.data.lens 
@@ -769,6 +777,15 @@ def _randomize_lighting(self, context, ob):
     return {'FINISHED'}
 
 
+def _render_path_changed(self, context):
+    scene = context.scene
+    tmg_cam_vars = scene.tmg_cam_vars
+    camera = tmg_cam_vars.scene_camera
+
+    _set_custom_property( camera, "render_path", str( tmg_cam_vars.render_path ) )
+    scene.render.filepath = str( _get_custom_property(camera, "render_path") )
+
+
 class OBJECT_OT_TMG_Cam_Randomize_Selected_Light(bpy.types.Operator):
     """Randomizes selected light values"""
     bl_idname = 'object.tmg_randomize_light'
@@ -801,6 +818,7 @@ class TMG_Cam_Properties(bpy.types.PropertyGroup):
     ob_name : bpy.props.StringProperty(name='Object', default='Object', set=_set_ob_name, get=_get_ob_name)
     ob_data_name : bpy.props.StringProperty(name='Data', default='Object', set=_set_ob_data_name, get=_get_ob_data_name)
 
+    render_path : StringProperty(name="Path",description="Path to Directory",default="",maxlen=1024,subtype='DIR_PATH', update=_render_path_changed)
     render_slot : bpy.props.IntProperty(default=1, min=1, max=8, options={'ANIMATABLE'}, update=_set_render_slot)
     
     curve_lock_scale : bpy.props.BoolProperty(default=False)
@@ -1527,7 +1545,7 @@ class OBJECT_PT_TMG_Cam_Output_Panel_Image(bpy.types.Panel):
 
     def draw(self, context):
         scene = context.scene
-        props = scene.eevee
+        # props = scene.eevee
         tmg_cam_vars = scene.tmg_cam_vars
         
         if tmg_cam_vars.scene_camera and tmg_cam_vars.scene_camera.type == "CAMERA":
@@ -1535,10 +1553,7 @@ class OBJECT_PT_TMG_Cam_Output_Panel_Image(bpy.types.Panel):
             layout.use_property_split = True
             layout.use_property_decorate = False  # No animation.
 
-            rd = context.scene.render
-            image_settings = rd.image_settings
-
-            layout.prop(rd, "filepath", text="")
+            layout.prop(tmg_cam_vars, 'render_path', text='')
             
             row = layout.row(align=True)
             row.operator("render.render", text='Image', icon="CAMERA_DATA")
@@ -1566,7 +1581,7 @@ class OBJECT_PT_TMG_Cam_Output_Panel_Image_Settings(bpy.types.Panel):
             layout.use_property_decorate = False  # No animation.
 
             rd = context.scene.render
-            image_settings = rd.image_settings
+            # image_settings = rd.image_settings
 
             layout.prop(scene, 'use_nodes')
 
